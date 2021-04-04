@@ -5,6 +5,7 @@ import os
 import math
 import warnings
 
+# from IPython.display import Image, HTML
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -126,12 +127,27 @@ mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
                   home_goals, away_goals])
 map_ = pymc.MAP( mcmc )
 map_.fit()
-mcmc.sample(200000, 40000, 20)
+iteration = 200000
+burn = 40000
+thin = 20
+mcmc.sample(iter = iteration, burn = burn, thin = thin)
 
 #generate plots
 pymc.Matplot.plot(home)
+plt.show()
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["home_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
+plt.close()
 pymc.Matplot.plot(intercept)
+plt.show()
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["intercept_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
+plt.close()
 pymc.Matplot.plot(tau_att)
+plt.show()
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_att_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
+plt.close()
 pymc.Matplot.plot(tau_def)
-Embed = Image(os.path.join(CHART_DIR, 'atts.png'))
+plt.show()
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_def_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
+plt.close()
+# Embed = Image(os.path.join(CHART_DIR, 'atts.png'))
 # Embed
