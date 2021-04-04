@@ -56,16 +56,20 @@ tau_att = pymc.Gamma('tau_att', .1, .1, value=10)
 tau_def = pymc.Gamma('tau_def', .1, .1, value=10)
 intercept = pymc.Normal('intercept', 0, .0001, value=0)
 
+#original paper without tweaks
+mu_att = pymc.Normal('mu_att', 0, .0001, value=0)
+mu_def = pymc.Normal('mu_def', 0, .0001, value=0)
+
 print("".join(["Defined hyperpriors"]))
 
 #team-specific parameters
 atts_star = pymc.Normal("atts_star", 
-                        mu=0, 
+                        mu=mu_att, 
                         tau=tau_att, 
                         size=num_teams, 
                         value=att_starting_points.values)
 defs_star = pymc.Normal("defs_star", 
-                        mu=0, 
+                        mu=mu_def, 
                         tau=tau_def, 
                         size=num_teams, 
                         value=def_starting_points.values) 
@@ -132,10 +136,13 @@ burn = 40000
 thin = 20
 mcmc.sample(iter = iteration, burn = burn, thin = thin)
 
+#save statistics
+mcmc.write_csv(os.path.join(CHART_DIR, "".join(["stats_", str(iteration), "_", str(burn), "_", str(thin), ".csv"])), variables=["home", "intercept", "tau_att", "tau_def"])
+
 #generate plots
 pymc.Matplot.plot(home)
 # plt.show()
-plt.savefig(fname = os.path.join(CHART_DIR, "".join(["home_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["home_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
 plt.close()
 pymc.Matplot.plot(intercept)
 # plt.show()
