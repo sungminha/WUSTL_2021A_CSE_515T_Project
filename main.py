@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import pymc # I know folks are switching to "as pm" but I'm just not there yet
 
 DATA_DIR = os.path.join(os.getcwd(), 'data')
+CHART_DIR = os.path.join(os.getcwd(), 'charts')
 data_file = os.path.join(DATA_DIR, 'final_18-19season.csv')
 VERBOSE = False
 
@@ -126,3 +127,12 @@ mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
 map_ = pymc.MAP( mcmc )
 map_.fit()
 mcmc.sample(200000, 40000, 20)
+
+#generate plots
+pymc.Matplot.plot(home)
+pymc.Matplot.plot(intercept)
+pymc.Matplot.plot(tau_att)
+pymc.Matplot.plot(tau_def)
+Embed = Image(os.path.join(CHART_DIR, 'atts.png')
+Embed
+
