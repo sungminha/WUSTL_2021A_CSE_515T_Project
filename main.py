@@ -15,7 +15,9 @@ import pymc # I know folks are switching to "as pm" but I'm just not there yet
 DATA_DIR = os.path.join(os.getcwd(), 'data')
 CHART_DIR = os.path.join(os.getcwd(), 'charts')
 data_file = os.path.join(DATA_DIR, 'final_18-19season.csv')
+
 VERBOSE = False
+USE_MU_ATT_and_MU_DEF = False #use instead of zero for mean of att and def
 
 #load data: we assume this is processed data table with indices for team numbers
 df = pd.read_csv(data_file, sep=",")
@@ -57,23 +59,35 @@ tau_def = pymc.Gamma('tau_def', .1, .1, value=10)
 intercept = pymc.Normal('intercept', 0, .0001, value=0)
 
 #original paper without tweaks
-mu_att = pymc.Normal('mu_att', 0, .0001, value=0)
-mu_def = pymc.Normal('mu_def', 0, .0001, value=0)
+if (USE_MU_ATT_and_MU_DEF):
+  mu_att = pymc.Normal('mu_att', 0, .0001, value=0)
+  mu_def = pymc.Normal('mu_def', 0, .0001, value=0)
 
 print("".join(["Defined hyperpriors"]))
 
 #team-specific parameters
-atts_star = pymc.Normal("atts_star", 
-                        mu=mu_att, 
-                        tau=tau_att, 
-                        size=num_teams, 
-                        value=att_starting_points.values)
-defs_star = pymc.Normal("defs_star", 
-                        mu=mu_def, 
-                        tau=tau_def, 
-                        size=num_teams, 
-                        value=def_starting_points.values) 
-
+if (USE_MU_ATT_and_MU_DEF):
+  atts_star = pymc.Normal("atts_star", 
+                          mu=mu_att, 
+                          tau=tau_att, 
+                          size=num_teams, 
+                          value=att_starting_points.values)
+  defs_star = pymc.Normal("defs_star", 
+                          mu=mu_def, 
+                          tau=tau_def, 
+                          size=num_teams, 
+                          value=def_starting_points.values) 
+else:
+  atts_star = pymc.Normal("atts_star", 
+                          mu=0, 
+                          tau=tau_att, 
+                          size=num_teams, 
+                          value=att_starting_points.values)
+  defs_star = pymc.Normal("defs_star", 
+                          mu=0, 
+                          tau=tau_def, 
+                          size=num_teams, 
+                          value=def_starting_points.values)     
 print("".join(["Defined team-specific parameters"]))
 
 # trick to code the sum to zero contraint
@@ -89,6 +103,7 @@ def defs(defs_star=defs_star):
     defs = defs - np.mean(defs_star)
     return defs
 
+#To-Do: try replacing with Skellum
 @pymc.deterministic
 def home_theta(home_team=home_team, 
                away_team=away_team, 
