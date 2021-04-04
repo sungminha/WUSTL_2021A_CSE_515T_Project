@@ -21,11 +21,14 @@ df.head()
 print(df)
 
 #select columns we want
-# observed_home_goals = df.home_score.values
-# observed_away_goals = df.away_score.values
-# home_team = df.i_home.values
-# away_team = df.i_away.values
-# num_teams = len(df.i_home.unique())
-# num_games = len(home_team)
+observed_home_goals = df['FTHG']
+observed_away_goals = df['FTAG']
+home_team = df['HomeTeam']
+away_team = df['AwayTeam']
+num_teams = len(home_team.unique())
+num_games = len(home_team)
 
-
+print(observed_home_goals)
+print(observed_away_goals)
+print(home_team)
+print(away_team)
