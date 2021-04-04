@@ -134,5 +134,4 @@ pymc.Matplot.plot(intercept)
 pymc.Matplot.plot(tau_att)
 pymc.Matplot.plot(tau_def)
 Embed = Image(os.path.join(CHART_DIR, 'atts.png')
-Embed
-
+# Embed
