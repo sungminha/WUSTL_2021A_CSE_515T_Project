@@ -2,6 +2,7 @@
 expect to run on python >3.7
 """
 import os
+import sys
 import math
 import warnings
 
@@ -16,16 +17,28 @@ DATA_DIR = os.path.join(os.getcwd(), 'data')
 CHART_DIR = os.path.join(os.getcwd(), 'charts')
 data_file = os.path.join(DATA_DIR, 'final_18-19season.csv')
 
-VERBOSE = False
+#parameters for model training
+iteration = 200 #how many iterations?
+burn = 40 #how many to discard from the beginning of the iterations?
+thin = 20 #how often to record?
+
+VERBOSE = False #more printouts
 USE_MU_ATT_and_MU_DEF = False #use instead of zero for mean of att and def
+
+##Running Code starts here
+
+#sanity check: check if data file exists
+if not (os.path.isfile(data_file)):
+  print("".join(["ERROR: data file (", str(data_file), ") does not exist."]), flush=True)
+  sys.exit()
 
 #load data: we assume this is processed data table with indices for team numbers
 df = pd.read_csv(data_file, sep=",")
 
 if (VERBOSE):
-  print("df: ")
-  print(df)
-print("".join(["Finished loading in data from ", str(data_file)]))
+  print("df: ", flush=True)
+  print(df, flush=True)
+print("".join(["Finished loading in data from ", str(data_file)]), flush=True)
 
 #select columns we want
 observed_home_goals = df['FTHG']
@@ -36,15 +49,15 @@ num_teams = len(home_team.unique())
 num_games = len(home_team)
 
 if (VERBOSE):
-  print("observed_home_goals: ")
-  print(observed_home_goals)
-  print("observed_away_goals: ")
-  print(observed_away_goals)
-  print("home_team: ")
-  print(home_team)
-  print("away_team: ")
-  print(away_team)
-print("".join(["Finished finding variables of interest from data"]))
+  print("observed_home_goals: ", flush=True)
+  print(observed_home_goals, flush=True)
+  print("observed_away_goals: ", flush=True)
+  print(observed_away_goals, flush=True)
+  print("home_team: ", flush=True)
+  print(home_team, flush=True)
+  print("away_team: ", flush=True)
+  print(away_team, flush=True)
+print("".join(["Finished finding variables of interest from data"]), flush=True)
 
 #starting points
 g = df.groupby('HomeTeam')
@@ -63,7 +76,7 @@ if (USE_MU_ATT_and_MU_DEF):
   mu_att = pymc.Normal('mu_att', 0, .0001, value=0)
   mu_def = pymc.Normal('mu_def', 0, .0001, value=0)
 
-print("".join(["Defined hyperpriors"]))
+print("".join(["Defined hyperpriors"]), flush=True)
 
 #team-specific parameters
 if (USE_MU_ATT_and_MU_DEF):
@@ -88,7 +101,7 @@ else:
                           tau=tau_def, 
                           size=num_teams, 
                           value=def_starting_points.values)     
-print("".join(["Defined team-specific parameters"]))
+print("".join(["Defined team-specific parameters"]), flush=True)
 
 # trick to code the sum to zero contraint
 @pymc.deterministic
@@ -127,7 +140,7 @@ def away_theta(home_team=home_team,
                   atts[away_team] + 
                   defs[home_team])   
 
-print("".join(["Defined functions for att, def, and thetas"]))
+print("".join(["Defined functions for att, def, and thetas"]), flush=True)
 
 home_goals = pymc.Poisson('home_goals', 
                           mu=home_theta, 
@@ -138,7 +151,7 @@ away_goals = pymc.Poisson('away_goals',
                           value=observed_away_goals, 
                           observed=True)
 
-print("".join(["Running MCMC"]))
+print("".join(["Running MCMC"]), flush=True)
 
 mcmc = pymc.MCMC([home, intercept, tau_att, tau_def, 
                   home_theta, away_theta, 
@@ -146,39 +159,99 @@ mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
                   home_goals, away_goals])
 map_ = pymc.MAP( mcmc )
 map_.fit()
-iteration = 200000
-burn = 40000
-thin = 20
 mcmc.sample(iter = iteration, burn = burn, thin = thin)
 
 #save statistics
 mcmc.write_csv(os.path.join(CHART_DIR, "".join(["stats_", str(iteration), "_", str(burn), "_", str(thin), ".csv"])), variables=["home", "intercept", "tau_att", "tau_def"])
 
 #generate plots
+
+#generate plots: home - all (trace, acorr, hist)
 pymc.Matplot.plot(home)
-# plt.show()
 plt.savefig(fname = os.path.join(CHART_DIR, "".join(["home_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
 plt.close()
-pymc.Matplot.plot(intercept)
-# plt.show()
-plt.savefig(fname = os.path.join(CHART_DIR, "".join(["intercept_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
-plt.close()
-pymc.Matplot.plot(tau_att)
-# plt.show()
-plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_att_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
-plt.close()
-pymc.Matplot.plot(tau_def)
-# plt.show()
-plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_def_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
-plt.close()
-# Embed = Image(os.path.join(CHART_DIR, 'atts.png'))
-# Embed
 
-# pymc.Matplot.plot(atts)
-# # plt.show()
-# plt.savefig(fname = os.path.join(CHART_DIR, "".join(["atts_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
-# plt.close()
-# pymc.Matplot.plot(defs)
-# # plt.show()
-# plt.savefig(fname = os.path.join(CHART_DIR, "".join(["defs_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
-# plt.close()
+#plot individual (trace, hist)
+pymc.Matplot.trace(home)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["home_trace_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+pymc.Matplot.histogram(home)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["home_histogram_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+
+#generate plots: intercept - all (trace, acorr, hist)
+pymc.Matplot.plot(intercept)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["intercept_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+#plot individual (trace, hist)
+pymc.Matplot.trace(intercept)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["intercept_trace_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+pymc.Matplot.histogram(intercept)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["intercept_histogram_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+
+
+#generate plots: tau_att - all (trace, acorr, hist)
+pymc.Matplot.plot(tau_att)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_att_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+#plot individual (trace, hist)
+pymc.Matplot.trace(tau_att)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_att_trace_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+pymc.Matplot.histogram(tau_att)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_att_histogram_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+
+
+#generate plots: tau_def - all (trace, acorr, hist)
+pymc.Matplot.plot(tau_def)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_def_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+#plot individual (trace, hist)
+pymc.Matplot.trace(tau_def)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_def_trace_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+pymc.Matplot.histogram(tau_def)
+plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_def_histogram_", str(iteration), "_", str(burn), "_", str(thin), ".png"]) ))
+plt.close()
+
+#making predictions
+# observed_season = DATA_DIR + 'premier_league_13_14_table.csv'
+observed_season = data_file
+df_observed = pd.read_csv(observed_season)
+
+#teams for teams indexing
+teams_file = os.path.join(DATA_DIR, 'team_index.csv')
+if not (os.path.isfile(teams_file)):
+  print("".join(["ERROR: teams file (", str(teams_file), ") does not exist."]), flush=True)
+  sys.exit()
+teams = pd.read_csv(teams_file)
+
+df_avg = pd.DataFrame({'avg_att': atts.stats()['mean'],
+                       'avg_def': defs.stats()['mean']} )
+print("df_avg:")
+print(df_avg)
+print("df_observed")
+print(df_observed)
+df_avg = pd.merge(df_avg, df_observed, left_index=True, right_on='HomeTeam', how='left')
+
+fig, ax = plt.subplots(figsize=(8,6))
+
+# for label, x, y in zip(df_avg[0].values, df_avg.avg_att.values, df_avg.avg_def.values):
+#     ax.annotate(label, xy=(x,y), xytext = (-5,5), textcoords = 'offset points')
+# ax.set_title('Attack vs Defense avg effect: 13-14 Premier League')
+# ax.set_xlabel('Avg attack effect')
+# ax.set_ylabel('Avg defense effect')
+# ax.legend()
