@@ -19,8 +19,8 @@ data_file = os.path.join(DATA_DIR, 'final_18-19season.csv')
 team_file = os.path.join(DATA_DIR, 'team_index.csv')
 
 # parameters for model training
-iteration = 200  # how many iterations?
-burn = 40  # how many to discard from the beginning of the iterations?
+iteration = 200000  # how many iterations?
+burn = 4000  # how many to discard from the beginning of the iterations?
 thin = 20  # how often to record?
 
 VERBOSE = False  # more printouts
