@@ -15,12 +15,14 @@ import pymc # I know folks are switching to "as pm" but I'm just not there yet
 DATA_DIR = os.path.join(os.getcwd(), 'data')
 CHART_DIR = os.path.join(os.getcwd(), 'charts')
 data_file = os.path.join(DATA_DIR, 'final_18-19season.csv')
+team_file = os.path.join(DATA_DIR, 'team_index.csv')
 
 VERBOSE = False
-USE_MU_ATT_and_MU_DEF = False #use instead of zero for mean of att and def
+USE_MU_ATT_and_MU_DEF = True #use instead of zero for mean of att and def
 
 #load data: we assume this is processed data table with indices for team numbers
 df = pd.read_csv(data_file, sep=",")
+team_details = pd.read_csv(team_file, sep=",")
 
 if (VERBOSE):
   print("df: ")
@@ -171,8 +173,14 @@ pymc.Matplot.plot(tau_def)
 # plt.show()
 plt.savefig(fname = os.path.join(CHART_DIR, "".join(["tau_def_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
-# Embed = Image(os.path.join(CHART_DIR, 'atts.png'))
-# Embed
+
+# Generate Statistics for per team basis
+total_stat = mcmc.stats()
+attack_param = total_stat['atts']
+mean_attack_team = attack_param['mean']
+
+defence_param = total_stat['defs']
+mean_defence_team = defence_param['mean']
 
 # pymc.Matplot.plot(atts)
 # # plt.show()
