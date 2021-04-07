@@ -274,8 +274,9 @@ df_avg = pd.DataFrame({
                         'avg_def': defs.stats()['mean'],
                       },
                       index=teams.index)
-print("df_avg:")
-print(df_avg)
+if (VERBOSE):
+  print("df_avg:")
+  print(df_avg)
 
 fig, ax = plt.subplots(figsize=(8, 6))
 ax.plot(df_avg.avg_att,  df_avg.avg_def, 'o')
@@ -286,4 +287,9 @@ ax.set_title('Attack vs Defense average effect: 18-19 Premier League')
 ax.set_xlabel('Average attack effect')
 ax.set_ylabel('Average defense effect')
 ax.legend()
-plt.show()
+#plt.show()
+
+#save figure of scatterplot of att vs def
+plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+    ["scatter_avg_att_avg_def_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
+plt.close()
