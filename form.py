@@ -50,11 +50,68 @@ for i in range(len(home_away.index)):
     home_ind = home_away.iloc[i,0] - 1
     away_ind = home_away.iloc[i,1] - 1
     result = home_away.iloc[i,2]
-    if result==0:
-        if home_match_counter[home_ind] == 0:
-            form_home[home_ind,home_match_counter[home_ind]] = 1
+    if result == 0:
+        if home_match_counter[home_ind] == 0 and away_match_counter[away_ind] == 0:
+            form_home[home_ind,home_match_counter[home_ind]] = 1 + gamma
+            form_away[away_ind,away_match_counter[away_ind]] = 1 - gamma
+        elif home_match_counter[home_ind] == 0 and away_match_counter[away_ind] != 0:
+            form_home[home_ind,home_match_counter[home_ind]] = 1 + gamma*form_away[away_ind,away_match_counter[away_ind]-1]
+            form_away[away_ind,away_match_counter[away_ind]] = form_away[away_ind,away_match_counter[away_ind]-1] - gamma*form_away[away_ind,away_match_counter[away_ind]-1]
+        elif home_match_counter[home_ind] != 0 and away_match_counter[away_ind] == 0:
+            form_home[home_ind,home_match_counter[home_ind]] = form_home[home_ind,home_match_counter[home_ind]-1] + gamma
+            form_away[away_ind,away_match_counter[away_ind]] = 1 - gamma
         else:
             form_home[home_ind,home_match_counter[home_ind]] = form_home[home_ind,home_match_counter[home_ind]-1] + gamma*form_away[away_ind,away_match_counter[away_ind]-1]
+            form_away[away_ind,away_match_counter[away_ind]] = form_away[away_ind,away_match_counter[away_ind]-1] - gamma*form_away[away_ind,away_match_counter[away_ind]-1]
+        
+        home_match_counter[home_ind] = home_match_counter[home_ind] + 1
+        away_match_counter[away_ind] = away_match_counter[away_ind] + 1
+    
+    
+    if result == 1:
+        if home_match_counter[home_ind] == 0 and away_match_counter[away_ind] == 0:
+            form_home[home_ind,home_match_counter[home_ind]] = 1 - gamma
+            form_away[away_ind,away_match_counter[away_ind]] = 1 + gamma
+        elif home_match_counter[home_ind] == 0 and away_match_counter[away_ind] != 0:
+            form_home[home_ind,home_match_counter[home_ind]] = 1 - gamma
+            form_away[away_ind,away_match_counter[away_ind]] = form_away[away_ind,away_match_counter[away_ind]-1] + gamma
+        elif home_match_counter[home_ind] != 0 and away_match_counter[away_ind] == 0:
+            form_home[home_ind,home_match_counter[home_ind]] = form_home[home_ind,home_match_counter[home_ind]-1]  - gamma*form_home[home_ind,home_match_counter[home_ind]-1]
+            form_away[away_ind,away_match_counter[away_ind]] = 1 + gamma*form_home[home_ind,home_match_counter[home_ind]-1]
+        else:
+            form_home[home_ind,home_match_counter[home_ind]] = form_home[home_ind,home_match_counter[home_ind]-1] - gamma*form_home[home_ind,home_match_counter[home_ind]-1]
+            form_away[away_ind,away_match_counter[away_ind]] = form_away[away_ind,away_match_counter[away_ind]-1] + gamma*form_home[home_ind,home_match_counter[home_ind]-1]
+        
+        home_match_counter[home_ind] = home_match_counter[home_ind] + 1
+        away_match_counter[away_ind] = away_match_counter[away_ind] + 1
+            
+    if result == 2:
+        if home_match_counter[home_ind] == 0 and away_match_counter[away_ind] == 0:
+            form_home[home_ind,home_match_counter[home_ind]] = 1
+            form_away[away_ind,away_match_counter[away_ind]] = 1
+        elif home_match_counter[home_ind] == 0 and away_match_counter[away_ind] != 0:
+            form_home[home_ind,home_match_counter[home_ind]] = 1 - gamma*(1 - form_away[away_ind,away_match_counter[away_ind]-1])
+            form_away[away_ind,away_match_counter[away_ind]] = form_away[away_ind,away_match_counter[away_ind]-1] - gamma*(form_away[away_ind,away_match_counter[away_ind]-1] - 1)
+        elif home_match_counter[home_ind] != 0 and away_match_counter[away_ind] == 0:
+            form_home[home_ind,home_match_counter[home_ind]] = form_home[home_ind,home_match_counter[home_ind]-1] - gamma*(form_home[home_ind,home_match_counter[home_ind]-1] - 1)
+            form_away[away_ind,away_match_counter[away_ind]] = 1 - gamma*(1 - form_home[home_ind,home_match_counter[home_ind]-1])
+        else:
+            form_home[home_ind,home_match_counter[home_ind]] = form_home[home_ind,home_match_counter[home_ind]-1] - gamma*(form_home[home_ind,home_match_counter[home_ind]-1] - form_away[away_ind,away_match_counter[away_ind]-1])
+            form_away[away_ind,away_match_counter[away_ind]] = form_away[away_ind,away_match_counter[away_ind]-1] - gamma*(form_away[away_ind,away_match_counter[away_ind]-1] - form_home[home_ind,home_match_counter[home_ind]-1])
+            
+        home_match_counter[home_ind] = home_match_counter[home_ind] + 1
+        away_match_counter[away_ind] = away_match_counter[away_ind] + 1
+            
+            
+            
+        
+            
+        
+        
+            
+            
+        
+        
                 
             
     
