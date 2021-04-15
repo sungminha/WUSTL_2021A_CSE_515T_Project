@@ -4,13 +4,15 @@ Created on Wed Apr 14 13:55:59 2021
 
 @author: Kaushik Dutta
 """
+"""
+Calculating The Form of Each Team for both HOME and AWAY Matches
+
+"""
 
 import os
 import sys
 import math
 import warnings
-
-# from IPython.display import Image, HTML
 import numpy as np
 import pandas as pd
 import seaborn as sns
