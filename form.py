@@ -41,9 +41,7 @@ home_away = df.iloc[:,1:3]
 home_away = home_away.merge(res.to_frame(), left_index=True, right_index=True)
 
 form_home = np.zeros((no_teams,19))
-form_home[:,0] = 1
 form_away = np.zeros((no_teams,19))
-form_away[:,0] = 1
 gamma = 0.33    # Stealing Fraction
 home_match_counter = np.zeros((no_teams,1),dtype = int)
 away_match_counter = np.zeros((no_teams,1),dtype = int)
@@ -103,6 +101,25 @@ for i in range(len(home_away.index)):
             
         home_match_counter[home_ind] = home_match_counter[home_ind] + 1
         away_match_counter[away_ind] = away_match_counter[away_ind] + 1
+            
+
+## Caluclating the per game form for each team
+
+form = np.zeros((len(home_away.index),2))
+for i in range(no_teams):
+    counter1 = 0
+    counter2 = 0
+    for j in range(len(home_away.index)):
+        if home_away.iloc[j,0] == i+1:
+            form[j,0] = form_home[i,counter1]
+            counter1 = counter1 + 1
+        if home_away.iloc[j,1] == i+1:
+            form[j,1] = form_away[i,counter2]
+            counter2 = counter2 + 1
+    
+## Inculcating the home and away form in main table
+df['Home Form'] = form[:,0]
+df['Away Form'] = form[:,1]
             
             
             
