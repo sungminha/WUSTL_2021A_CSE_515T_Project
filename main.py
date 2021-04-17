@@ -46,6 +46,13 @@ print("".join(["Finished loading in data from ", str(data_file)]), flush=True)
 # select columns we want
 observed_home_goals = df['FTHG']
 observed_away_goals = df['FTAG']
+
+observed_home_shots = df['HS']
+observed_away_shots = df['AS']
+observed_home_shots_target = df['HST']
+observed_away_shots_target = df['AST']
+
+
 home_team = df['HomeTeam'] - 1  # indexing should start at zero not one
 away_team = df['AwayTeam'] - 1  # indexing should start at zero not one
 num_teams = len(home_team.unique())
@@ -64,15 +71,33 @@ print("".join(["Finished finding variables of interest from data"]), flush=True)
 
 # starting points
 g = df.groupby('HomeTeam')
-att_starting_points = np.log(g['FTAG'].mean())
+att_starting_points = np.log(g['FTHG'].mean())
+att_shots_starting_points = np.log(g['HS'].mean())
+att_shots_target_starting_points = np.log(g['HST'].mean())
+
 g = df.groupby('AwayTeam')
 def_starting_points = -np.log(g['FTAG'].mean())
+defs_shots_starting_points = -np.log(g['AS'].mean())
+defs_shots_target_starting_points = np.log(g['AST'].mean())
+
+
 
 # hyperpriors
-home = pymc.Normal('home', 0, .0001, value=0)
+home = pymc.Normal('home', 0, .1, value=0)
 tau_att = pymc.Gamma('tau_att', .1, .1, value=10)
 tau_def = pymc.Gamma('tau_def', .1, .1, value=10)
-intercept = pymc.Normal('intercept', 0, .0001, value=0)
+intercept = pymc.Normal('intercept', 0, .1, value=0)
+
+mu_att_shots = pymc.Normal('mu_att_shots', 0, .0001, value=0)
+mu_def_shots = pymc.Normal('mu_def_shots', 0, .0001, value=0)
+tau_att_shots = pymc.Gamma('tau_att_shots', .1, .1, value = 10)
+tau_def_shots = pymc.Gamma('tau_def_shots', .1, .1, value = 10)
+
+mu_att_shots_target = pymc.Normal('mu_att_shots_target', 0, .0001, value=0)
+mu_def_shots_target = pymc.Normal('mu_def_shots_target', 0, .0001, value=0)
+tau_att_shots_target = pymc.Gamma('tau_att_shots_target', .1, .1, value = 10)
+tau_def_shots_target = pymc.Gamma('tau_def_shots_target', .1, .1, value = 10)
+
 
 # original paper without tweaks
 if (USE_MU_ATT_and_MU_DEF):
@@ -104,6 +129,31 @@ else:
                             tau=tau_def,
                             size=num_teams,
                             value=def_starting_points.values)
+
+    
+atts_shots_star = pymc.Normal("atts_shots_star",
+                              mu = mu_att_shots,
+                              tau = tau_att_shots,
+                              size = num_teams,
+                              value = att_shots_starting_points.values)
+defs_shots_star = pymc.Normal("defs_shots_star",
+                              mu = mu_def_shots,
+                              tau = tau_def_shots,
+                              size = num_teams,
+                              value = defs_shots_starting_points.values)
+
+atts_shots_target_star = pymc.Normal("atts_shots_target_star",
+                              mu = mu_att_shots_target,
+                              tau = tau_att_shots_target,
+                              size = num_teams,
+                              value = att_shots_target_starting_points.values)
+defs_shots_target_star = pymc.Normal("defs_shots_target_star",
+                              mu = mu_def_shots_target,
+                              tau = tau_def_shots_target,
+                              size = num_teams,
+                              value = defs_shots_target_starting_points.values)
+
+                              
 print("".join(["Defined team-specific parameters"]), flush=True)
 
 # trick to code the sum to zero contraint
@@ -115,6 +165,17 @@ def atts(atts_star=atts_star):
     atts = atts - np.mean(atts_star)
     return atts
 
+@pymc.deterministic
+def atts_shots(atts_shots_star = atts_shots_star):
+    atts_shots = atts_shots_star.copy()
+    atts_shots = atts_shots - np.mean(atts_shots_star)
+    return atts_shots
+
+@pymc.deterministic
+def atts_shots_target(atts_shots_target_star = atts_shots_target_star):
+    atts_shots_target = atts_shots_target_star.copy()
+    atts_shots_target = atts_shots_target - np.mean(atts_shots_target_star)
+    return atts_shots_target
 
 @pymc.deterministic
 def defs(defs_star=defs_star):
@@ -122,6 +183,17 @@ def defs(defs_star=defs_star):
     defs = defs - np.mean(defs_star)
     return defs
 
+@pymc.deterministic
+def defs_shots(defs_shots_star = defs_shots_star):
+    defs_shots = defs_shots_star.copy()
+    defs_shots = defs_shots - np.mean(defs_shots_star)
+    return defs_shots
+
+@pymc.deterministic
+def defs_shots_target(defs_shots_target_star = defs_shots_target_star):
+    defs_shots_target = defs_shots_target_star.copy()
+    defs_shots_target = defs_shots_target - np.mean(defs_shots_target_star)
+    return defs_shots_target
 # To-Do: try replacing with Skellum
 
 
@@ -131,11 +203,19 @@ def home_theta(home_team=home_team,
                home=home,
                atts=atts,
                defs=defs,
+               atts_shots=atts_shots,
+               defs_shots=defs_shots,
+               atts_shots_target = atts_shots_target,
+               defs_shots_target = defs_shots_target,
                intercept=intercept):
     return np.exp(intercept +
                   home +
                   atts[home_team] +
-                  defs[away_team])
+                  defs[away_team] +
+                  atts_shots[home_team] + 
+                  defs_shots[away_team]+
+                  atts_shots_target[home_team]+
+                  defs_shots_target[away_team])
 
 
 @pymc.deterministic
@@ -144,10 +224,18 @@ def away_theta(home_team=home_team,
                home=home,
                atts=atts,
                defs=defs,
+               atts_shots=atts_shots,
+               defs_shots=defs_shots,
+               atts_shots_target = atts_shots_target,
+               defs_shots_target = defs_shots_target,
                intercept=intercept):
     return np.exp(intercept +
                   atts[away_team] +
-                  defs[home_team])
+                  defs[home_team] +
+                  atts_shots[away_team] + 
+                  defs_shots[home_team]+
+                  atts_shots_target[away_team]+
+                  defs_shots_target[home_team])
 
 
 print("".join(["Defined functions for att, def, and thetas"]), flush=True)
@@ -166,6 +254,8 @@ print("".join(["Running MCMC"]), flush=True)
 mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
                   home_theta, away_theta,
                   atts_star, defs_star, atts, defs,
+                  atts_shots_star, defs_shots_star, atts_shots,defs_shots,
+                  atts_shots_target_star, defs_shots_target_star, atts_shots_target, defs_shots_target,
                   home_goals, away_goals])
 map_ = pymc.MAP(mcmc)
 map_.fit()
