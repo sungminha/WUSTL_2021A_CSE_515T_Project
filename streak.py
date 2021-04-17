@@ -13,7 +13,9 @@ DATA_DIR = os.path.join(os.getcwd(), 'data')
 CHART_DIR = os.path.join(os.getcwd(), 'charts')
 data_file = os.path.join(DATA_DIR, 'final_18-19season.csv')
 team_file = os.path.join(DATA_DIR, 'team_index.csv')
-VERBOSE = True  # more printouts
+VERBOSE = False  # more printouts
+
+k = 4 #streak from last 4 games
 
 # sanity check: check if data file exists
 if not (os.path.isfile(data_file)):
@@ -54,11 +56,85 @@ if (VERBOSE):
   print(streak_data, flush=True)
 
 #non-weighted streaks
-streak_home = np.zeros(shape=(np.shape(streak_data)[0], np.shape(team_details)[0])) #380 matches by 20 teams
-streak_data = np.zeros(shape=(np.shape(streak_data)[0], np.shape(team_details)[0])) #380 matches by 20 teams
+streak_home = pd.DataFrame(np.zeros(shape=(np.shape(streak_data)[0], np.shape(team_details)[0]))) #380 matches by 20 teams
+streak_away = pd.DataFrame(np.zeros(shape=(np.shape(team_details)[0], np.shape(team_details)[0]))) #380 matches by 20 teams
 
-for match_index in np.arange(start=0, stop=np.shape(streak_data)[0], step=1):
+for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1):
   if (VERBOSE):
-    print("".join(["match_index: (", str(match_index),")"]))
+    print("".join(["team_index: (", str(team_index),")"]))
   
+  streak_data_home_index_match = streak_data.loc[streak_data['HomeTeam'] == int(team_index)]
+  streak_data_away_index_match = streak_data.loc[streak_data['AwayTeam'] == int(team_index)]
+  streak_data_index_match = pd.concat([streak_data_home_index_match, streak_data_away_index_match], axis=0).sort_values(by=['MatchNo'])
+  #attach a column for streak
+  streak_data_index_match["streak"] = 0
+  streak_data_index_match["streak"] = streak_data_index_match["streak"].astype(float) #cast to float as the value may be float not integer when assigned
+  del streak_data_home_index_match
+  del streak_data_away_index_match
+
+  if (VERBOSE):
+    print("streak_data_index_match: ")
+    print(streak_data_index_match)
+    print(np.shape(streak_data_index_match))
+
+  match_count = 1
+  for match_index in streak_data_index_match['MatchNo']:
+    if (VERBOSE):
+      print("".join(["team_index: (", str(team_index),")\t| match_index: (", str(match_index),")\t| match_count: (", str(match_count),")"]))
+
+    if (match_count > k):
+      temp = streak_data_index_match.loc[streak_data_index_match['MatchNo'] < int(match_index)]
+      temp = temp.iloc[-k:]
+      temp_home = temp.loc[temp["HomeTeam"] == int(team_index)]
+      temp_away = temp.loc[temp["AwayTeam"] == int(team_index)]
+    
+      #intialize as zero
+      sum_streak = 0
+
+      #for home team win
+      test = temp_home.loc[temp_home["FTR"] == 0]
+      if not (test.empty):
+        sum_streak = sum_streak + np.shape(test)[0]*3
+      del test
+
+      #for home team draw
+      test = temp_home.loc[temp_home["FTR"] == 2]
+      if not (test.empty):
+        sum_streak = sum_streak + np.shape(test)[0]*1
+      del test
+
+      #for away team win
+      test = temp_away.loc[temp_away["FTR"] == 1]
+      if not (test.empty):
+        sum_streak = sum_streak + np.shape(test)[0]*3
+      del test
+
+      #for away team draw
+      test = temp_away.loc[temp_away["FTR"] == 2]
+      if not (test.empty):
+        sum_streak = sum_streak + np.shape(test)[0]*1
+      del test
+
+      #divide by 3
+      sum_streak = float(sum_streak) / float(3*k)
+
+      if (VERBOSE):
+        print("temp: ")
+        print(temp, flush=True)
+        print("sum_streak: ")
+        print(sum_streak, flush=True)
+      streak_data_index_match.at[streak_data_index_match.loc[streak_data_index_match['MatchNo'] == int(match_index)].index.item(), 'streak'] = float(sum_streak)
+      del temp
+
+    match_count = match_count + 1
+
+  print(streak_data_index_match)
+  print(np.shape(streak_data_index_match))
+
+#   streak_home.at[streak_home.loc[streak_home['MatchNo'] < int(match_index)].index.item()] = sum_streak
+#   print("streak_home: ")
+#   print(streak_home)
+
   
+
+  del streak_data_index_match
