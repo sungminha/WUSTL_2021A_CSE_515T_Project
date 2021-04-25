@@ -2,12 +2,12 @@
 
 import os
 import sys
-import math
-import warnings
+#import math
+#import warnings
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+#import seaborn as sns
+#import matplotlib.pyplot as plt
 
 DATA_DIR = os.path.join(os.getcwd(), 'data')
 CHART_DIR = os.path.join(os.getcwd(), 'charts')
@@ -32,7 +32,8 @@ if not (os.path.isfile(team_file)):
 # load data: we assume this is processed data table with indices for team numbers
 df = pd.read_csv(data_file, sep=",")
 team_details = pd.read_csv(team_file, sep=",")
-# df.drop(df.iloc[:, 21:63], axis = 1, inplace = True) #extra columns
+del team_file
+del data_file
 
 #select corners, shots on target, and goals
 corners = df[['HC','AC']]
@@ -49,19 +50,37 @@ streak_data = home_away.merge(res, left_index=True, right_index=True) #380 match
 #clean up data for memory management
 del home_away
 del corners, shots_on_target, goals
-del df
 del res
 if (VERBOSE):
   print("streak_data: ")
   print(streak_data, flush=True)
 
 #non-weighted streaks
-streak_home = pd.DataFrame(np.zeros(shape=(np.shape(streak_data)[0], np.shape(team_details)[0]))) #380 matches by 20 teams
-streak_away = pd.DataFrame(np.zeros(shape=(np.shape(team_details)[0], np.shape(team_details)[0]))) #380 matches by 20 teams
+# streak_home = pd.DataFrame(np.zeros(shape=(np.shape(streak_data)[0], np.shape(team_details)[0]+1))) #380 matches by 20 teams + 1
+# streak_away = pd.DataFrame(np.zeros(shape=(np.shape(streak_data)[0], np.shape(team_details)[0]+1))) #380 matches by 20 teams + 1
+streak_home = pd.DataFrame(np.zeros(shape=(np.shape(streak_data)[0], 4))) #380 matches by MatchNo, HomeTeam, AwayTeam, streak
+streak_away = pd.DataFrame(np.zeros(shape=(np.shape(streak_data)[0], 4))) #380 matches by MatchNo, HomeTeam, AwayTeam, streak
+
+#assign match index to left most column
+# streak_columns = ['MatchNo']
+# for i in np.arange(start=0, stop=team_details['i'].size, step=1):
+#   streak_columns.append(team_details['i'][i])
+# del i
+streak_columns = ['MatchNo', 'HomeTeam', 'AwayTeam', 'streak']
+streak_home.columns =streak_columns
+streak_away.columns =streak_columns
+streak_home['MatchNo'] = df['MatchNo']
+streak_away['MatchNo'] = df['MatchNo']
+streak_home['HomeTeam'] = df['HomeTeam']
+streak_away['HomeTeam'] = df['HomeTeam']
+streak_home['AwayTeam'] = df['AwayTeam']
+streak_away['AwayTeam'] = df['AwayTeam']
+del df
+del streak_columns
 
 for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1):
   if (VERBOSE):
-    print("".join(["team_index: (", str(team_index),")"]))
+    print("".join(["team_index: (", str(team_index),") - Generating streak_data_index_match"]))
   
   streak_data_home_index_match = streak_data.loc[streak_data['HomeTeam'] == int(team_index)]
   streak_data_away_index_match = streak_data.loc[streak_data['AwayTeam'] == int(team_index)]
@@ -114,6 +133,8 @@ for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1):
       if not (test.empty):
         sum_streak = sum_streak + np.shape(test)[0]*1
       del test
+      del temp_away
+      del temp_home
 
       #divide by 3
       sum_streak = float(sum_streak) / float(3*k)
@@ -125,16 +146,74 @@ for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1):
         print(sum_streak, flush=True)
       streak_data_index_match.at[streak_data_index_match.loc[streak_data_index_match['MatchNo'] == int(match_index)].index.item(), 'streak'] = float(sum_streak)
       del temp
-
+      del sum_streak
     match_count = match_count + 1
 
-  print(streak_data_index_match)
-  print(np.shape(streak_data_index_match))
+    if (VERBOSE):
+      print(streak_data_index_match)
+      print(np.shape(streak_data_index_match))
 
-#   streak_home.at[streak_home.loc[streak_home['MatchNo'] < int(match_index)].index.item()] = sum_streak
-#   print("streak_home: ")
-#   print(streak_home)
+  print("".join(["team_index: (", str(team_index),") - assigning to streak_home"]))
+  streak_data_index_match_home = streak_data_index_match[streak_data_index_match['HomeTeam'] == team_index]
+  # for match_index_per_team in np.arange(np.shape(streak_data_index_match_home['MatchNo'])[0]-1):
+  for match_index_per_team in np.arange(np.shape(streak_data_index_match_home['MatchNo'])[0]):
+    
+    if (VERBOSE):
+      print("".join(["match_index_per_team: (", str(match_index_per_team), ")"]))
+      print("".join(["match_index_per_team: (", str(match_index_per_team), ")"]))
+    
+    # below is for finding matches between two matches of a team
+    # index_match_1 = streak_home['MatchNo'] < streak_data_index_match_home['MatchNo'].iloc[match_index_per_team+1]
+    # index_match_2 = streak_home['MatchNo'] >= streak_data_index_match_home['MatchNo'].iloc[match_index_per_team]
+    # if (match_index_per_team == np.shape(streak_data_index_match_home['MatchNo'])[0]-2):
+    #   index_match_1 = streak_home['MatchNo'] <= streak_home.loc[np.shape(streak_home)[0]-1, 'MatchNo'] #has to inlucde last row
+    #   index_match_2 = streak_home['MatchNo'] >= streak_data_index_match_home['MatchNo'].iloc[match_index_per_team]
 
-  
+    # index_match = index_match_1 & index_match_2
+    # del index_match_2
+    # del index_match_1
+    index_match = streak_home['MatchNo'] == streak_data_index_match_home['MatchNo'].iloc[match_index_per_team]
+    
+    if (VERBOSE):
+      print("Before applying streak information")
+      print(streak_home[['MatchNo', 'streak']][index_match])
+    streak_home.loc[index_match, 'streak'] = streak_data_index_match_home['streak'].iloc[match_index_per_team]
+    if (VERBOSE):
+      print("After applying streak information")
+      print(streak_home[['MatchNo', 'streak']][index_match])
+    del index_match
+    
+  print("".join(["team_index: (", str(team_index),") - assigning to streak_away"]))
+  streak_data_index_match_away = streak_data_index_match[streak_data_index_match['AwayTeam'] == team_index]
+  for match_index_per_team in np.arange(np.shape(streak_data_index_match_away['MatchNo'])[0]):
+    
+    if (VERBOSE):
+      print("".join(["match_index_per_team: (", str(match_index_per_team), ")"]))
+      print("".join(["match_index_per_team: (", str(match_index_per_team), ")"]))
+    
+    
+    # below is for finding matches between two matches of a team
+    # index_match_1 = streak_away['MatchNo'] < streak_data_index_match_away['MatchNo'].iloc[match_index_per_team+1]
+    # index_match_2 = streak_away['MatchNo'] >= streak_data_index_match_away['MatchNo'].iloc[match_index_per_team]
+    # if (match_index_per_team == np.shape(streak_data_index_match_away['MatchNo'])[0]-2):
+    #   index_match_1 = streak_away['MatchNo'] <= streak_home.loc[np.shape(streak_home)[0]-1, 'MatchNo'] #has to inlucde last row
+    #   index_match_2 = streak_away['MatchNo'] >= streak_data_index_match_away['MatchNo'].iloc[match_index_per_team]
 
-  del streak_data_index_match
+    # index_match = index_match_1 & index_match_2
+    # del index_match_2
+    # del index_match_1
+    index_match = streak_away['MatchNo'] == streak_data_index_match_away['MatchNo'].iloc[match_index_per_team]
+
+    if (VERBOSE):
+      print("Before applying streak information")
+      print(streak_away[['MatchNo', 'streak']][index_match])
+    streak_away.loc[index_match, 'streak'] = streak_data_index_match_away['streak'].iloc[match_index_per_team]
+    if (VERBOSE):
+      print("After applying streak information")
+      print(streak_away[['MatchNo', 'streak']][index_match])
+    del index_match
+    
+del team_index
+del match_index
+del match_count
+del match_index_per_team
