@@ -120,8 +120,9 @@ for i in range(no_teams):
 ## Inculcating the home and away form in main table
 df['Home Form'] = form[:,0]
 df['Away Form'] = form[:,1]
-            
-            
+  
+final_file = os.path.join(DATA_DIR, 'final_data.csv')          
+df.to_csv(final_file,index=False)        
             
         
             
