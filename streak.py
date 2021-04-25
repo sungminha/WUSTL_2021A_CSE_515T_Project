@@ -12,6 +12,7 @@ import pandas as pd
 DATA_DIR = os.path.join(os.getcwd(), 'data')
 CHART_DIR = os.path.join(os.getcwd(), 'charts')
 data_file = os.path.join(DATA_DIR, 'final_18-19season.csv')
+final_data_file = os.path.join(DATA_DIR, 'final_data.csv')
 team_file = os.path.join(DATA_DIR, 'team_index.csv')
 VERBOSE = False  # more printouts
 
@@ -217,3 +218,26 @@ del team_index
 del match_index
 del match_count
 del match_index_per_team
+del streak_data
+del streak_data_index_match
+del team_details
+
+# now load it to final_Data
+streak_home.rename({'streak':'Home Streak'}, axis='columns', inplace=True)
+streak_away.rename({'streak':'Away Streak'}, axis='columns', inplace=True)
+
+# sanity check: check if team file exists
+if not (os.path.isfile(final_data_file)):
+    print("".join(
+        ["ERROR: final data file (", str(final_data_file), ") does not exist."]), flush=True)
+    sys.exit()
+
+df_final_data = pd.read_csv(final_data_file, sep=",")
+if not 'Home Streak' in df_final_data.columns:
+  df_final_data = df_final_data.merge(streak_home[['MatchNo', 'Home Streak']], on='MatchNo')
+  
+if not 'Away Streak' in df_final_data.columns:
+  df_final_data = df_final_data.merge(streak_away[['MatchNo', 'Away Streak']], on='MatchNo')
+
+df_final_data.to_csv(final_data_file)
+del final_data_file
