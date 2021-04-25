@@ -15,7 +15,7 @@ import pymc  # I know folks are switching to "as pm" but I'm just not there yet
 
 DATA_DIR = os.path.join(os.getcwd(), 'data')
 CHART_DIR = os.path.join(os.getcwd(), 'charts')
-data_file = os.path.join(DATA_DIR, 'final_18-19season.csv')
+data_file = os.path.join(DATA_DIR, 'final_data.csv')
 team_file = os.path.join(DATA_DIR, 'team_index.csv')
 
 # parameters for model training
@@ -51,6 +51,14 @@ observed_home_shots = df['HS']
 observed_away_shots = df['AS']
 observed_home_shots_target = df['HST']
 observed_away_shots_target = df['AST']
+observed_home_corners = df['HC']
+observed_away_corners = df['AC']
+observed_home_fouls = df['HF']
+observed_away_fouls = df['AF']
+observed_home_yc = df['HY']
+observed_away_yc = df['AY']
+observed_home_rc = df['HR']
+observed_away_rc = df['AR']
 
 
 home_team = df['HomeTeam'] - 1  # indexing should start at zero not one
@@ -74,11 +82,19 @@ g = df.groupby('HomeTeam')
 att_starting_points = np.log(g['FTHG'].mean())
 att_shots_starting_points = np.log(g['HS'].mean())
 att_shots_target_starting_points = np.log(g['HST'].mean())
+att_corners_starting_points = np.log(g['HC'].mean())
+att_fouls_starting_points = np.log(g['HF'].mean())
+att_yc_starting_points = np.log(g['HY'].mean())
+att_rc_starting_points = np.log(g['HR'].mean())
 
 g = df.groupby('AwayTeam')
 def_starting_points = -np.log(g['FTAG'].mean())
 defs_shots_starting_points = -np.log(g['AS'].mean())
-defs_shots_target_starting_points = np.log(g['AST'].mean())
+defs_shots_target_starting_points = -np.log(g['AST'].mean())
+defs_corners_starting_points = -np.log(g['AC'].mean())
+defs_fouls_starting_points = -np.log(g['AF'].mean())
+defs_yc_starting_points = -np.log(g['AY'].mean())
+defs_rc_starting_points = -np.log(g['AR'].mean())
 
 
 
@@ -97,6 +113,26 @@ mu_att_shots_target = pymc.Normal('mu_att_shots_target', 0, .0001, value=0)
 mu_def_shots_target = pymc.Normal('mu_def_shots_target', 0, .0001, value=0)
 tau_att_shots_target = pymc.Gamma('tau_att_shots_target', .1, .1, value = 10)
 tau_def_shots_target = pymc.Gamma('tau_def_shots_target', .1, .1, value = 10)
+
+mu_att_corners = pymc.Normal('mu_att_corners', 0, .0001, value=0)
+mu_def_corners = pymc.Normal('mu_def_corners', 0, .0001, value=0)
+tau_att_corners = pymc.Gamma('tau_att_corners', .1, .1, value = 10)
+tau_def_corners = pymc.Gamma('tau_def_corners', .1, .1, value = 10)
+
+mu_att_fouls = pymc.Normal('mu_att_fouls', 0, .0001, value=0)
+mu_def_fouls = pymc.Normal('mu_def_fouls', 0, .0001, value=0)
+tau_att_fouls = pymc.Gamma('tau_att_fouls', .1, .1, value = 10)
+tau_def_fouls = pymc.Gamma('tau_def_fouls', .1, .1, value = 10)
+
+mu_att_yc = pymc.Normal('mu_att_yc', 0, .0001, value=0)
+mu_def_yc = pymc.Normal('mu_def_yc', 0, .0001, value=0)
+tau_att_yc = pymc.Gamma('tau_att_yc', .1, .1, value = 10)
+tau_def_yc = pymc.Gamma('tau_def_yc', .1, .1, value = 10)
+
+mu_att_rc = pymc.Normal('mu_att_rc', 0, .0001, value=0)
+mu_def_rc = pymc.Normal('mu_def_rc', 0, .0001, value=0)
+tau_att_rc = pymc.Gamma('tau_att_rc', .1, .1, value = 10)
+tau_def_rc = pymc.Gamma('tau_def_rc', .1, .1, value = 10)
 
 
 # original paper without tweaks
@@ -153,6 +189,51 @@ defs_shots_target_star = pymc.Normal("defs_shots_target_star",
                               size = num_teams,
                               value = defs_shots_target_starting_points.values)
 
+
+atts_corner_star = pymc.Normal("atts_corner_star",
+                              mu = mu_att_corners,
+                              tau = tau_att_corners,
+                              size = num_teams,
+                              value = att_corners_starting_points.values)
+defs_corner_star = pymc.Normal("defs_corner_star",
+                              mu = mu_def_corners,
+                              tau = tau_def_corners,
+                              size = num_teams,
+                              value = defs_corners_starting_points.values)
+
+atts_fouls_star = pymc.Normal("atts_fouls_star",
+                              mu = mu_att_fouls,
+                              tau = tau_att_fouls,
+                              size = num_teams,
+                              value = att_fouls_starting_points.values)
+defs_fouls_star = pymc.Normal("defs_fouls_star",
+                              mu = mu_def_fouls,
+                              tau = tau_def_fouls,
+                              size = num_teams,
+                              value = defs_fouls_starting_points.values)
+
+atts_yc_star = pymc.Normal("atts_yc_star",
+                              mu = mu_att_yc,
+                              tau = tau_att_yc,
+                              size = num_teams,
+                              value = att_yc_starting_points.values)
+defs_yc_star = pymc.Normal("defs_yc_star",
+                              mu = mu_def_yc,
+                              tau = tau_def_yc,
+                              size = num_teams,
+                              value = defs_yc_starting_points.values)
+
+atts_rc_star = pymc.Normal("atts_rc_star",
+                              mu = mu_att_rc,
+                              tau = tau_att_rc,
+                              size = num_teams,
+                              value = att_rc_starting_points.values)
+defs_rc_star = pymc.Normal("defs_rc_star",
+                              mu = mu_def_rc,
+                              tau = tau_def_rc,
+                              size = num_teams,
+                              value = defs_rc_starting_points.values)
+
                               
 print("".join(["Defined team-specific parameters"]), flush=True)
 
@@ -178,6 +259,32 @@ def atts_shots_target(atts_shots_target_star = atts_shots_target_star):
     return atts_shots_target
 
 @pymc.deterministic
+def atts_corners(atts_corner_star = atts_corner_star):
+    atts_corners = atts_corner_star.copy()
+    atts_corners = atts_corners - np.mean(atts_corner_star)
+    return atts_corners
+
+@pymc.deterministic
+def atts_fouls(atts_fouls_star = atts_fouls_star):
+    atts_fouls = atts_fouls_star.copy()
+    atts_fouls = atts_fouls - np.mean(atts_fouls_star)
+    return atts_fouls
+
+@pymc.deterministic
+def atts_yc(atts_yc_star = atts_yc_star):
+    atts_yc = atts_yc_star.copy()
+    atts_yc = atts_yc - np.mean(atts_yc_star)
+    return atts_yc
+
+@pymc.deterministic
+def atts_rc(atts_rc_star = atts_rc_star):
+    atts_rc = atts_rc_star.copy()
+    atts_rc = atts_rc - np.mean(atts_rc_star)
+    return atts_rc
+
+
+
+@pymc.deterministic
 def defs(defs_star=defs_star):
     defs = defs_star.copy()
     defs = defs - np.mean(defs_star)
@@ -194,6 +301,30 @@ def defs_shots_target(defs_shots_target_star = defs_shots_target_star):
     defs_shots_target = defs_shots_target_star.copy()
     defs_shots_target = defs_shots_target - np.mean(defs_shots_target_star)
     return defs_shots_target
+
+@pymc.deterministic
+def defs_corners(defs_corner_star = defs_corner_star):
+    defs_corners = defs_corner_star.copy()
+    defs_corners = defs_corners - np.mean(defs_corner_star)
+    return defs_corners
+
+@pymc.deterministic
+def defs_fouls(defs_fouls_star = defs_fouls_star):
+    defs_fouls = defs_fouls_star.copy()
+    defs_fouls = defs_fouls - np.mean(defs_fouls_star)
+    return defs_fouls
+
+@pymc.deterministic
+def defs_yc(defs_yc_star = defs_yc_star):
+    defs_yc = defs_yc_star.copy()
+    defs_yc = defs_yc - np.mean(defs_yc_star)
+    return defs_yc
+
+@pymc.deterministic
+def defs_rc(defs_rc_star = defs_rc_star):
+    defs_rc = defs_rc_star.copy()
+    defs_rc = defs_rc - np.mean(defs_rc_star)
+    return defs_rc
 # To-Do: try replacing with Skellum
 
 
@@ -207,6 +338,11 @@ def home_theta(home_team=home_team,
                defs_shots=defs_shots,
                atts_shots_target = atts_shots_target,
                defs_shots_target = defs_shots_target,
+               atts_corners = atts_corners,
+               defs_corners = defs_corners,
+               atts_fouls = atts_fouls,
+               atts_yc = atts_yc,
+               atts_rc = atts_rc,
                intercept=intercept):
     return np.exp(intercept +
                   home +
@@ -215,7 +351,15 @@ def home_theta(home_team=home_team,
                   atts_shots[home_team] + 
                   defs_shots[away_team]+
                   atts_shots_target[home_team]+
-                  defs_shots_target[away_team])
+                  defs_shots_target[away_team]+
+                  atts_corners[home_team]+
+                  defs_corners[away_team]+
+                  atts_fouls[home_team]+
+                  defs_fouls[away_team]+
+                  atts_yc[home_team]+
+                  defs_yc[away_team]+
+                  atts_rc[home_team]+
+                  defs_rc[away_team])
 
 
 @pymc.deterministic
@@ -228,6 +372,11 @@ def away_theta(home_team=home_team,
                defs_shots=defs_shots,
                atts_shots_target = atts_shots_target,
                defs_shots_target = defs_shots_target,
+               atts_corners = atts_corners,
+               defs_corners = defs_corners,
+               atts_fouls = atts_fouls,
+               atts_yc = atts_yc,
+               atts_rc = atts_rc,
                intercept=intercept):
     return np.exp(intercept +
                   atts[away_team] +
@@ -235,7 +384,15 @@ def away_theta(home_team=home_team,
                   atts_shots[away_team] + 
                   defs_shots[home_team]+
                   atts_shots_target[away_team]+
-                  defs_shots_target[home_team])
+                  defs_shots_target[home_team]+
+                  atts_corners[away_team]+
+                  defs_corners[home_team]+
+                  atts_fouls[away_team]+
+                  defs_fouls[home_team]+
+                  atts_yc[away_team]+
+                  defs_yc[home_team]+
+                  atts_rc[away_team]+
+                  defs_rc[home_team])
 
 
 print("".join(["Defined functions for att, def, and thetas"]), flush=True)
@@ -256,6 +413,10 @@ mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
                   atts_star, defs_star, atts, defs,
                   atts_shots_star, defs_shots_star, atts_shots,defs_shots,
                   atts_shots_target_star, defs_shots_target_star, atts_shots_target, defs_shots_target,
+                  atts_corner_star, defs_corner_star, atts_corners, defs_corners,
+                  atts_fouls_star, defs_fouls_star, atts_fouls, defs_fouls,
+                  atts_yc_star, defs_yc_star, atts_yc, defs_yc,
+                  atts_rc_star, defs_rc_star, atts_rc, defs_rc,
                   home_goals, away_goals])
 map_ = pymc.MAP(mcmc)
 map_.fit()
