@@ -85,7 +85,9 @@ att_shots_target_starting_points = np.log(g['HST'].mean())
 att_corners_starting_points = np.log(g['HC'].mean())
 att_fouls_starting_points = np.log(g['HF'].mean())
 att_yc_starting_points = np.log(g['HY'].mean())
-att_rc_starting_points = np.log(g['HR'].mean())
+test1 = g['HR'].mean()
+test1[test1==0] = 1
+att_rc_starting_points = np.log(test1)
 
 g = df.groupby('AwayTeam')
 def_starting_points = -np.log(g['FTAG'].mean())
@@ -94,7 +96,9 @@ defs_shots_target_starting_points = -np.log(g['AST'].mean())
 defs_corners_starting_points = -np.log(g['AC'].mean())
 defs_fouls_starting_points = -np.log(g['AF'].mean())
 defs_yc_starting_points = -np.log(g['AY'].mean())
-defs_rc_starting_points = -np.log(g['AR'].mean())
+test2 = g['AR'].mean()
+test2[test2==0] = 1
+defs_rc_starting_points = -np.log(test2)
 
 
 
@@ -341,8 +345,11 @@ def home_theta(home_team=home_team,
                atts_corners = atts_corners,
                defs_corners = defs_corners,
                atts_fouls = atts_fouls,
+               defs_fouls = defs_fouls,
                atts_yc = atts_yc,
+               defs_yc = defs_yc,
                atts_rc = atts_rc,
+               defs_rc = defs_rc,
                intercept=intercept):
     return np.exp(intercept +
                   home +
@@ -353,13 +360,13 @@ def home_theta(home_team=home_team,
                   atts_shots_target[home_team]+
                   defs_shots_target[away_team]+
                   atts_corners[home_team]+
-                  defs_corners[away_team]+
-                  atts_fouls[home_team]+
+                  defs_corners[away_team]-
+                  (atts_fouls[home_team]+
                   defs_fouls[away_team]+
                   atts_yc[home_team]+
                   defs_yc[away_team]+
                   atts_rc[home_team]+
-                  defs_rc[away_team])
+                  defs_rc[away_team]))
 
 
 @pymc.deterministic
@@ -375,8 +382,11 @@ def away_theta(home_team=home_team,
                atts_corners = atts_corners,
                defs_corners = defs_corners,
                atts_fouls = atts_fouls,
+               defs_fouls = defs_fouls,
                atts_yc = atts_yc,
+               defs_yc = defs_yc,
                atts_rc = atts_rc,
+               defs_rc = defs_rc,
                intercept=intercept):
     return np.exp(intercept +
                   atts[away_team] +
@@ -386,13 +396,13 @@ def away_theta(home_team=home_team,
                   atts_shots_target[away_team]+
                   defs_shots_target[home_team]+
                   atts_corners[away_team]+
-                  defs_corners[home_team]+
-                  atts_fouls[away_team]+
+                  defs_corners[home_team]-
+                  (atts_fouls[away_team]+
                   defs_fouls[home_team]+
                   atts_yc[away_team]+
                   defs_yc[home_team]+
                   atts_rc[away_team]+
-                  defs_rc[home_team])
+                  defs_rc[home_team]))
 
 
 print("".join(["Defined functions for att, def, and thetas"]), flush=True)
