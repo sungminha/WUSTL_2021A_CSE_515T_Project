@@ -436,7 +436,7 @@ mcmc.sample(iter=iteration, burn=burn, thin=thin)
 mcmc.write_csv(os.path.join(CHART_DIR, "".join(["stats_", str(iteration), "_", str(
     burn), "_", str(thin), ".csv"])), variables=["home", "intercept", "tau_att", "tau_def"])
 
-# generate plots
+## generate plots
 
 # generate plots: home - all (trace, acorr, hist)
 pymc.Matplot.plot(home)
@@ -554,3 +554,176 @@ ax.legend()
 plt.savefig(fname=os.path.join(CHART_DIR, "".join(
     ["scatter_avg_att_avg_def_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
+
+
+###
+# simulate the seasons
+def simulate_season():
+    """
+    Simulate a season once, using one random draw from the mcmc chain. 
+    """
+    num_samples = atts.trace().shape[0]
+    draw = np.random.randint(0, num_samples)
+    atts_draw = pd.DataFrame({'att': atts.trace()[draw, :],})
+    defs_draw = pd.DataFrame({'def': defs.trace()[draw, :],})
+    home_draw = home.trace()[draw]
+    intercept_draw = intercept.trace()[draw]
+    season = df.copy()
+    season = pd.merge(season, atts_draw, left_on='HomeTeam', right_index=True)
+    season = pd.merge(season, defs_draw, left_on='HomeTeam', right_index=True)
+    season = season.rename(columns = {'att': 'att_home', 'def': 'def_home'})
+    season = pd.merge(season, atts_draw, left_on='AwayTeam', right_index=True)
+    season = pd.merge(season, defs_draw, left_on='AwayTeam', right_index=True)
+    season = season.rename(columns = {'att': 'att_away', 'def': 'def_away'})
+    season['home'] = home_draw
+    season['intercept'] = intercept_draw
+    season['home_theta'] = season.apply(lambda x: math.exp(x['intercept'] + 
+                                                           x['home'] + 
+                                                           x['att_home'] + 
+                                                           x['def_away']), axis=1)
+    season['away_theta'] = season.apply(lambda x: math.exp(x['intercept'] + 
+                                                           x['att_away'] + 
+                                                           x['def_home']), axis=1)
+    season['home_goals'] = season.apply(lambda x: np.random.poisson(x['home_theta']), axis=1)
+    season['away_goals'] = season.apply(lambda x: np.random.poisson(x['away_theta']), axis=1)
+    season['home_outcome'] = season.apply(lambda x: 'win' if x['home_goals'] > x['away_goals'] else 
+                                                    'loss' if x['home_goals'] < x['away_goals'] else 'draw', axis=1)
+    season['away_outcome'] = season.apply(lambda x: 'win' if x['home_goals'] < x['away_goals'] else 
+                                                    'loss' if x['home_goals'] > x['away_goals'] else 'draw', axis=1)
+    season = season.join(pd.get_dummies(season.home_outcome, prefix='home'))
+    season = season.join(pd.get_dummies(season.away_outcome, prefix='away'))
+    return season
+
+
+def create_season_table(season):
+    """
+    Using a season dataframe output by simulate_season(), create a summary dataframe with wins, losses, goals for, etc.
+    
+    """
+    g = season.groupby('HomeTeam')    
+    home = pd.DataFrame({'home_goals': g.home_goals.sum(),
+                         'home_goals_against': g.away_goals.sum(),
+                         'home_wins': g.home_win.sum(),
+                         'home_draws': g.home_draw.sum(),
+                         'home_losses': g.home_loss.sum()
+                         })
+    g = season.groupby('AwayTeam')    
+    away = pd.DataFrame({'away_goals': g.away_goals.sum(),
+                         'away_goals_against': g.home_goals.sum(),
+                         'away_wins': g.away_win.sum(),
+                         'away_draws': g.away_draw.sum(),
+                         'away_losses': g.away_loss.sum()
+                         })
+    df = home.join(away)
+    df['wins'] = df.home_wins + df.away_wins
+    df['draws'] = df.home_draws + df.away_draws
+    df['losses'] = df.home_losses + df.away_losses
+    df['points'] = df.wins * 3 + df.draws
+    df['gf'] = df.home_goals + df.away_goals
+    df['ga'] = df.home_goals_against + df.away_goals_against
+    df['gd'] = df.gf - df.ga
+    df = pd.merge(teams, df, left_on='i', right_index=True)
+    # df = df.sort_index(key='points', ascending=False)
+    df = df.sort_values(by='points', ascending=False)
+    df = df.reset_index()
+    df['position'] = df.index + 1
+    df['champion'] = (df.position == 1).astype(int)
+    df['qualified_for_CL'] = (df.position < 5).astype(int)
+    df['relegated'] = (df.position > 17).astype(int)
+    return df  
+    
+def simulate_seasons(n=100):
+    dfs = []
+    for i in range(n):
+        s = simulate_season()
+        t = create_season_table(s)
+        t['iteration'] = i
+        dfs.append(t)
+    return pd.concat(dfs, ignore_index=True)
+
+num_simul=1000
+simuls = simulate_seasons(num_simul)
+
+# team_name_test='Man United'
+# ax = simuls.points[simuls['Team'] == team_name_test].hist(figsize=(7,5))
+# median = simuls.points[simuls['Team'] == team_name_test].median()
+# ax.set_title("".join([team_name_test, "2017-18 points, ", str(num_simul), " simulations"]))
+# ax.plot([median, median], ax.get_ylim())
+# plt.annotate('Median: %s' % median, xy=(median + 1, ax.get_ylim()[1]-10))
+
+#df_observed
+goal_scored_path = os.path.join(DATA_DIR, 'team_index_totalGoalsScored_totalGoalsTaken.csv')
+df_observed = pd.read_csv(goal_scored_path, sep=",")
+del goal_scored_path
+DATA_DIR = os.path.join(os.getcwd(), 'data')
+CHART_DIR = os.path.join(os.getcwd(), 'charts')
+data_file = os.path.join(DATA_DIR, 'final_data.csv')
+team_file = os.path.join(DATA_DIR, 'team_index.csv')
+df_data = pd.read_csv(data_file, sep=",")
+df_team = pd.read_csv(team_file, sep=",")
+points = np.zeros(shape = (np.shape(df_team)[0]))
+for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1): 
+  match_home = df_data[df_data['HomeTeam'] == team_index]
+  win_home = match_home[match_home['FTHG'] > match_home['FTAG']]
+  del match_home
+  match_away = df_data[df_data['AwayTeam'] == team_index]
+  win_away = match_away[match_away['FTHG'] < match_away['FTAG']]
+  del match_away
+  match_draw_home = df_data[df_data['HomeTeam'] == team_index]
+  draw_home = match_draw_home[match_draw_home['FTHG'] == match_draw_home['FTAG']]
+  del match_draw_home
+  match_draw_away = df_data[df_data['AwayTeam'] == team_index]
+  draw_away = match_draw_away[match_draw_away['FTHG'] == match_draw_away['FTAG']]
+  del match_draw_away
+  match_lose_home = df_data[df_data['HomeTeam'] == team_index]
+  lose_home = match_lose_home[match_lose_home['FTHG'] < match_lose_home['FTAG']]
+  del match_lose_home
+  match_lose_away = df_data[df_data['AwayTeam'] == team_index]
+  lose_away = match_lose_away[match_lose_away['FTHG'] > match_lose_away['FTAG']]
+  del match_lose_away
+  win = pd.concat([win_home, win_away], ignore_index = True)
+  win.sort_values(by='MatchNo')
+  
+  draw = pd.concat([draw_home, draw_away], ignore_index = True)
+  draw.sort_values(by='MatchNo')
+  
+  lose = pd.concat([lose_home, lose_away], ignore_index = True)
+  lose.sort_values(by='MatchNo')
+  
+  points[team_index-1] = 3 * np.shape(win)[0] + 1 * np.shape(draw)[0]
+  
+df_observed['Pts'] = points
+g = simuls.groupby('Team')
+season_hdis = pd.DataFrame({'points_lower': g.points.quantile(.05),
+                            'points_upper': g.points.quantile(.95),
+                            'goals_for_lower': g.gf.quantile(.05),
+                            'goals_for_median': g.gf.median(),
+                            'goals_for_upper': g.gf.quantile(.95),
+                            'goals_against_lower': g.ga.quantile(.05),
+                            'goals_against_upper': g.ga.quantile(.95),
+                            })
+season_hdis = pd.merge(season_hdis, df_observed, left_index=True, right_on='Team')
+column_order = ['Team', 'points_lower', 'Pts', 'points_upper', 
+                'goals_for_lower', 'goals_scored', 'goals_for_median', 'goals_for_upper',
+                'goals_against_lower', 'goals_lost', 'goals_against_upper',]
+season_hdis = season_hdis[column_order]
+season_hdis['relative_goals_upper'] = season_hdis.goals_for_upper - season_hdis.goals_for_median
+season_hdis['relative_goals_lower'] = season_hdis.goals_for_median - season_hdis.goals_for_lower
+# season_hdis = season_hdis.sort_index(by='goals_scored')
+season_hdis = season_hdis.sort_values(by='goals_scored')
+season_hdis = season_hdis.reset_index()
+season_hdis['x'] = season_hdis.index + .5
+season_hdis
+
+fig, axs = plt.subplots(figsize=(10,6))
+axs.scatter(season_hdis.x, season_hdis.goals_scored, c=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals For')
+axs.errorbar(season_hdis.x, season_hdis.goals_for_median, 
+             yerr=(season_hdis[['relative_goals_lower', 'relative_goals_upper']].values).T, 
+             fmt='s', c=sns.palettes.color_palette()[5], label='Simulations')
+axs.set_title('Actual Goals For, and 90% Interval from Simulations, by Team')
+axs.set_xlabel('Team')
+axs.set_ylabel('Goals Scored')
+axs.set_xlim(0, 20)
+axs.legend()
+_= axs.set_xticks(season_hdis.index + .5)
+_= axs.set_xticklabels(season_hdis['Team'].values, rotation=45)
