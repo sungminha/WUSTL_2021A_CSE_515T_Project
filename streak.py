@@ -239,5 +239,5 @@ if not 'Home Streak' in df_final_data.columns:
 if not 'Away Streak' in df_final_data.columns:
   df_final_data = df_final_data.merge(streak_away[['MatchNo', 'Away Streak']], on='MatchNo')
 
-df_final_data.to_csv(final_data_file)
+df_final_data.to_csv(final_data_file, index=False)
 del final_data_file
