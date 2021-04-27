@@ -31,9 +31,9 @@ burn = 4000  # how many to discard from the beginning of the iterations?
 thin = 20  # how often to record?
 
 #for testing
-iteration = 200  # how many iterations?
-burn = 40  # how many to discard from the beginning of the iterations?
-thin = 2  # how often to record?
+# iteration = 200  # how many iterations?
+# burn = 40  # how many to discard from the beginning of the iterations?
+# thin = 2  # how often to record?
 
 
 VERBOSE = False  # more printouts
@@ -431,6 +431,19 @@ away_goals = pymc.Poisson('away_goals',
 
 print("".join(["Running MCMC"]), flush=True)
 
+# mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
+                  # home_theta, away_theta,
+                  # atts_star, defs_star, atts, defs,
+                  # atts_shots_star, defs_shots_star, atts_shots,defs_shots,
+                  # atts_shots_target_star, defs_shots_target_star, atts_shots_target, defs_shots_target,
+                  # atts_corner_star, defs_corner_star, atts_corners, defs_corners,
+                  # atts_fouls_star, defs_fouls_star, atts_fouls, defs_fouls,
+                  # atts_yc_star, defs_yc_star, atts_yc, defs_yc,
+                  # atts_rc_star, defs_rc_star, atts_rc, defs_rc,
+                  # home_goals, away_goals])
+
+output_data_path = os.path.join(OUTPUT_DIR, "".join(["state_", str(iteration), "_", str(
+    burn), "_", str(thin), ".csv"])))
 mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
                   home_theta, away_theta,
                   atts_star, defs_star, atts, defs,
@@ -440,10 +453,12 @@ mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
                   atts_fouls_star, defs_fouls_star, atts_fouls, defs_fouls,
                   atts_yc_star, defs_yc_star, atts_yc, defs_yc,
                   atts_rc_star, defs_rc_star, atts_rc, defs_rc,
-                  home_goals, away_goals])
+                  home_goals, away_goals], db='pickle', dbname=output_data_path)
 map_ = pymc.MAP(mcmc)
 map_.fit()
-mcmc.sample(iter=iteration, burn=burn, thin=thin)
+mcmc.sample(iter=iteration, burn=burn, thin=thin) #need to figure out how to save instead of running every time
+#save model
+
 
 # save statistics
 mcmc.write_csv(os.path.join(OUTPUT_DIR, "".join(["stats_", str(iteration), "_", str(
@@ -614,18 +629,23 @@ def simulate_season():
     """
     Simulate a season once, using one random draw from the mcmc chain. 
     """
-    num_samples = atts.trace().shape[0] #atts.trace() is [80, 20] shape
-    draw = np.random.randint(0, num_samples) #9800, for (iteration - burn) / thin
-    atts_draw = pd.DataFrame({'att': atts.trace()[draw, :],})
-    defs_draw = pd.DataFrame({'def': defs.trace()[draw, :],})
-    home_draw = home.trace()[draw] #home.trace() is [80,] shape
+    num_samples = atts.trace().shape[0] #atts.trace() is [(iteration - burn)/thin, 20] shape - 80 for testing
+    draw = np.random.randint(0, num_samples) #(iteration - burn) / thin
+    atts_draw = pd.DataFrame({'att': atts.trace()[draw, :],}) #[20, 1]
+    defs_draw = pd.DataFrame({'def': defs.trace()[draw, :],}) #[20, 1] - but index is 0~19 not 1~20
+    home_draw = home.trace()[draw] #home.trace() is [(iteration - burn)/thin,] shape
     intercept_draw = intercept.trace()[draw]
-    season = df.copy()
-    season = pd.merge(season, atts_draw, left_on='HomeTeam', right_index=True)
-    season = pd.merge(season, defs_draw, left_on='HomeTeam', right_index=True)
+    season = df.copy() #380 x 25
+
+    #need to align atts_draw and defs_draw with team_index
+    atts_draw = pd.merge(atts_draw, df_team['i'], left_index=True, right_index=True)
+    defs_draw = pd.merge(defs_draw, df_team['i'], left_index=True, right_index=True)
+    
+    season = pd.merge(season, atts_draw, left_on='HomeTeam', right_on='i')
+    season = pd.merge(season, defs_draw, left_on='HomeTeam', right_on='i')
     season = season.rename(columns = {'att': 'att_home', 'def': 'def_home'})
-    season = pd.merge(season, atts_draw, left_on='AwayTeam', right_index=True)
-    season = pd.merge(season, defs_draw, left_on='AwayTeam', right_index=True)
+    season = pd.merge(season, atts_draw, left_on='AwayTeam', right_on='i')
+    season = pd.merge(season, defs_draw, left_on='AwayTeam', right_on='i')
     season = season.rename(columns = {'att': 'att_away', 'def': 'def_away'})
     season['home'] = home_draw
     season['intercept'] = intercept_draw
@@ -644,7 +664,7 @@ def simulate_season():
                                                     'loss' if x['home_goals'] > x['away_goals'] else 'draw', axis=1)
     season = season.join(pd.get_dummies(season.home_outcome, prefix='home'))
     season = season.join(pd.get_dummies(season.away_outcome, prefix='away'))
-    return season
+    return season #[342, 43]
 
 
 def create_season_table(season):
@@ -652,7 +672,7 @@ def create_season_table(season):
     Using a season dataframe output by simulate_season(), create a summary dataframe with wins, losses, goals for, etc.
     
     """
-    g = season.groupby('HomeTeam')    
+    g = season.groupby('HomeTeam') #[19, 2]
     home = pd.DataFrame({'home_goals': g.home_goals.sum(),
                          'home_goals_against': g.away_goals.sum(),
                          'home_wins': g.home_win.sum(),
@@ -682,20 +702,27 @@ def create_season_table(season):
     df['champion'] = (df.position == 1).astype(int)
     df['qualified_for_CL'] = (df.position < 5).astype(int)
     df['relegated'] = (df.position > 17).astype(int)
-    return df  
-    
+    return df
+
 def simulate_seasons(n=100):
     dfs = []
+    if (VERBOSE):
+      print_interval = 5
+    else:
+      print_interval = 20
+      
     for i in range(n):
+        if (np.mod(i, print_interval) == 0):
+          print("".join(["Simulation:\t", str(i), "\t/\t", str(n)]))
         s = simulate_season()
         t = create_season_table(s)
         t['iteration'] = i
         dfs.append(t)
     return pd.concat(dfs, ignore_index=True)
 
-num_simul=1000
+num_simul=2000
 print("".join(["Running simulation for ", str(num_simul), " seasons"]))
-simuls = simulate_seasons(num_simul)
+simuls = simulate_seasons(num_simul) #19000 x 26
 
 # team_name_test='Man United'
 # ax = simuls.points[simuls['Team'] == team_name_test].hist(figsize=(7,5))
@@ -714,7 +741,7 @@ season_hdis = pd.DataFrame({'points_lower': g.points.quantile(.05),
                             'goals_against_lower': g.ga.quantile(.05),
                             'goals_against_upper': g.ga.quantile(.95),
                             })
-season_hdis = pd.merge(season_hdis, df_observed, left_index=True, right_on='Team')
+season_hdis = pd.merge(season_hdis, df_observed, left_index=True, right_on='Team') #[19, 15]
 column_order = ['Team', 'points_lower', 'Pts', 'points_upper', 
                 'goals_for_lower', 'goals_scored', 'goals_for_median', 'goals_for_upper',
                 'goals_against_lower', 'goals_lost', 'goals_against_upper',]
@@ -728,10 +755,10 @@ season_hdis['x'] = season_hdis.index + .5
 season_hdis
 
 fig, axs = plt.subplots(figsize=(10,6))
-axs.scatter(season_hdis.x, season_hdis.goals_scored, c=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals For')
+axs.scatter(season_hdis.x, season_hdis.goals_scored, color=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals For')
 axs.errorbar(season_hdis.x, season_hdis.goals_for_median, 
              yerr=(season_hdis[['relative_goals_lower', 'relative_goals_upper']].values).T, 
-             fmt='s', c=sns.palettes.color_palette()[5], label='Simulations')
+             fmt='s', color=sns.palettes.color_palette()[5], label='Simulations')
 axs.set_title('Actual Goals For, and 90% Interval from Simulations, by Team')
 axs.set_xlabel('Team')
 axs.set_ylabel('Goals Scored')
@@ -739,3 +766,9 @@ axs.set_xlim(0, 20)
 axs.legend()
 _= axs.set_xticks(season_hdis.index + .5)
 _= axs.set_xticklabels(season_hdis['Team'].values, rotation=45)
+
+#save fig
+output_actual_goas_vs_simulation_plot = os.path.join(OUTPUT_DIR, "".join(
+    ["simulation_vs_real_goals_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+plt.savefig(fname=output_actual_goas_vs_simulation_plot)
+plt.close()
