@@ -29,11 +29,13 @@ del current_datetime_string
 iteration = 200000  # how many iterations?
 burn = 4000  # how many to discard from the beginning of the iterations?
 thin = 20  # how often to record?
+num_simul=2000 #for simulation my MCMC
 
 #for testing
 # iteration = 200  # how many iterations?
 # burn = 40  # how many to discard from the beginning of the iterations?
 # thin = 2  # how often to record?
+# num_simul=200 #for simulation my MCMC
 
 
 VERBOSE = False  # more printouts
@@ -443,7 +445,7 @@ print("".join(["Running MCMC"]), flush=True)
                   # home_goals, away_goals])
 
 output_data_path = os.path.join(OUTPUT_DIR, "".join(["state_", str(iteration), "_", str(
-    burn), "_", str(thin), ".csv"])))
+    burn), "_", str(thin), ".pickle"]))
 mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
                   home_theta, away_theta,
                   atts_star, defs_star, atts, defs,
@@ -720,7 +722,6 @@ def simulate_seasons(n=100):
         dfs.append(t)
     return pd.concat(dfs, ignore_index=True)
 
-num_simul=2000
 print("".join(["Running simulation for ", str(num_simul), " seasons"]))
 simuls = simulate_seasons(num_simul) #19000 x 26
 
