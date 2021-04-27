@@ -26,10 +26,10 @@ goal_scored_path = os.path.join(DATA_DIR, 'team_index_totalGoalsScored_totalGoal
 del current_datetime_string
 
 # parameters for model training
-iteration = 200000  # how many iterations?
-burn = 4000  # how many to discard from the beginning of the iterations?
+iteration = 400000  # how many iterations?
+burn = 80000  # how many to discard from the beginning of the iterations?
 thin = 20  # how often to record?
-num_simul=2000 #for simulation my MCMC
+num_simul=10000 #for simulation my MCMC
 
 #for testing
 # iteration = 200  # how many iterations?
