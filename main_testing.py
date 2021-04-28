@@ -52,10 +52,10 @@ num_simul=10000 #for simulation my MCMC
 
 if (DEBUG2):
   #for testing
-  iteration = 200000  # how many iterations?
-  burn = 40000  # how many to discard from the beginning of the iterations?
-  thin = 20  # how often to record?
-  num_simul=1000 #for simulation my MCMC
+  iteration = 2000  # how many iterations?
+  burn = 400  # how many to discard from the beginning of the iterations?
+  thin = 2  # how often to record?
+  num_simul=100 #for simulation my MCMC
 elif (DEBUG):
   #for testing
   iteration = 200  # how many iterations?
@@ -700,15 +700,19 @@ if not DEBUG:
     sys.exit()
 
 if (DEBUG):
-  df_avg = pd.DataFrame({
-                        'team': teams.Team.values,
-                        'avg_att': atts.stats()['mean'],
-                        'avg_def': defs.stats()['mean'],
-                      },
-                      index=teams.index)
+  print("teams:")
+  print(teams)
+  teams = teams.rename(columns = {"team":"Team"})
+  # df_avg = pd.DataFrame({
+  #                       'team': teams.team.values,
+  #                       'avg_att': atts.stats()['mean'],
+  #                       'avg_def': defs.stats()['mean'],
+  #                     },
+  #                     index=teams.index)
 else:
   teams = pd.read_csv(teams_file)
-  df_avg = pd.DataFrame({
+
+df_avg = pd.DataFrame({
                         'team': teams.Team.values,
                         'avg_att': atts.stats()['mean'],
                         'avg_def': defs.stats()['mean'],
@@ -718,7 +722,7 @@ if (VERBOSE):
   print("df_avg:")
   print(df_avg)
 
-fig, ax = plt.subplots(figsize=(80, 60))
+fig, ax = plt.subplots(figsize=(24, 18))
 ax.plot(df_avg.avg_att,  df_avg.avg_def, 'o')
 
 for label, x, y in zip(df_avg.team.values, df_avg.avg_att.values, df_avg.avg_def.values):
@@ -927,6 +931,9 @@ def simulate_seasons(n=100):
 print("".join(["Running simulation for ", str(num_simul), " seasons"]))
 simuls = simulate_seasons(num_simul) #19000 x 26
 if (DEBUG):
+  simuls = simuls.rename(columns = {"team":"Team"})
+  print("simuls:")
+  print(simuls)
   print("simuls['Team'].unique:")
   print(np.unique(simuls['Team']))
   print("simuls['i'].unique:")
