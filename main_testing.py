@@ -270,7 +270,6 @@ if (USE_MU_ATT_and_MU_DEF):
 print("".join(["Defined hyperpriors"]), flush=True)
 
 # team-specific parameters
-
 if (USE_MU_ATT_and_MU_DEF):
     atts_star = pymc.Normal("atts_star",
                             mu=mu_att,
@@ -727,6 +726,7 @@ plt.close()
 
 #df_observed append pts if it does not exist
 df_observed = pd.read_csv(goal_scored_path, sep=",")
+<<<<<<< HEAD
 if (DEBUG):
   if not (DEBUG2):
     df_observed.loc[df_observed.QR.isnull(), 'QR'] = ''
@@ -734,7 +734,6 @@ if (DEBUG):
 df_data = pd.read_csv(data_file, sep=",")
 if not (DEBUG):
   df_team = pd.read_csv(team_file, sep=",")
-
 if not (DEBUG):
   if not 'Pts' in df_observed.columns: #if it already exists, no need to calculate and append
     points = np.zeros(shape = (np.shape(df_team)[0]))
@@ -770,14 +769,15 @@ if not (DEBUG):
     
     df_observed['Pts'] = points
     df_observed.to_csv(goal_scored_path, index=False) #save
+=======
+df_data = pd.read_csv(data_file, sep=",")
+df_team = pd.read_csv(team_file, sep=",")
 
-###
-# simulate the seasons
-def simulate_season():
-    """
-    Simulate a season once, using one random draw from the mcmc chain. 
-    """
-    num_samples = atts.trace().shape[0] #atts.trace() is [(iteration - burn)/thin, 20] shape - 80 for testing
+if not 'Pts' in df_observed.columns: #if it already exists, no need to calculate and append
+  points = np.zeros(shape = (np.shape(df_team)[0]))
+  for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1): 
+    match_home = df_data[df_data['HomeTeam'] == team_index]
+<<<<<<< HEAD
     # if (DEBUG):
     #   print("".join(["num_samples: ", str(num_samples)]))
     draw = np.random.randint(0, num_samples) #(iteration - burn) / thin
@@ -830,6 +830,25 @@ def simulate_season():
         season = pd.merge(season, atts_draw, left_on='AwayTeam', right_on='i')
         season = pd.merge(season, defs_draw, left_on='AwayTeam', right_on='i')
         season = season.rename(columns = {'att': 'att_away', 'def': 'def_away'})
+=======
+    draw = np.random.randint(0, num_samples) #(iteration - burn) / thin
+    atts_draw = pd.DataFrame({'att': atts.trace()[draw, :],}) #[20, 1]
+    defs_draw = pd.DataFrame({'def': defs.trace()[draw, :],}) #[20, 1] - but index is 0~19 not 1~20
+    home_draw = home.trace()[draw] #home.trace() is [(iteration - burn)/thin,] shape
+    intercept_draw = intercept.trace()[draw]
+    season = df.copy() #380 x 25
+
+    #need to align atts_draw and defs_draw with team_index
+    atts_draw = pd.merge(atts_draw, df_team['i'], left_index=True, right_index=True)
+    defs_draw = pd.merge(defs_draw, df_team['i'], left_index=True, right_index=True)
+    
+    season = pd.merge(season, atts_draw, left_on='HomeTeam', right_on='i')
+    season = pd.merge(season, defs_draw, left_on='HomeTeam', right_on='i')
+    season = season.rename(columns = {'att': 'att_home', 'def': 'def_home'})
+    season = pd.merge(season, atts_draw, left_on='AwayTeam', right_on='i')
+    season = pd.merge(season, defs_draw, left_on='AwayTeam', right_on='i')
+    season = season.rename(columns = {'att': 'att_away', 'def': 'def_away'})
+>>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
     season['home'] = home_draw
     season['intercept'] = intercept_draw
     season['home_theta'] = season.apply(lambda x: math.exp(x['intercept'] + 
@@ -855,6 +874,7 @@ def create_season_table(season):
     Using a season dataframe output by simulate_season(), create a summary dataframe with wins, losses, goals for, etc.
     
     """
+<<<<<<< HEAD
     if (DEBUG):
     #   print("season:")
     #   print(np.shape(season))
@@ -862,12 +882,16 @@ def create_season_table(season):
       g = season.groupby('i_home')
     else:
       g = season.groupby('HomeTeam') #[19, 2]
+=======
+    g = season.groupby('HomeTeam') #[19, 2]
+>>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
     home = pd.DataFrame({'home_goals': g.home_goals.sum(),
                          'home_goals_against': g.away_goals.sum(),
                          'home_wins': g.home_win.sum(),
                          'home_draws': g.home_draw.sum(),
                          'home_losses': g.home_loss.sum()
                          })
+<<<<<<< HEAD
     if (DEBUG):
     #   print("season:")
     #   print(np.shape(season))
@@ -875,6 +899,9 @@ def create_season_table(season):
       g = season.groupby('i_away')
     else:
       g = season.groupby('AwayTeam')    
+=======
+    g = season.groupby('AwayTeam')    
+>>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
     away = pd.DataFrame({'away_goals': g.away_goals.sum(),
                          'away_goals_against': g.home_goals.sum(),
                          'away_wins': g.away_win.sum(),
@@ -917,6 +944,7 @@ def simulate_seasons(n=100):
 
 print("".join(["Running simulation for ", str(num_simul), " seasons"]))
 simuls = simulate_seasons(num_simul) #19000 x 26
+<<<<<<< HEAD
 if (DEBUG):
   print("simuls['Team'].unique:")
   print(np.unique(simuls['Team']))
@@ -924,6 +952,9 @@ if (DEBUG):
   print(np.unique(simuls['i']))
   print("simuls['index'].unique:")
   print(np.unique(simuls['index']))
+=======
+
+>>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
 # team_name_test='Man United'
 # ax = simuls.points[simuls['Team'] == team_name_test].hist(figsize=(7,5))
 # median = simuls.points[simuls['Team'] == team_name_test].median()
@@ -931,12 +962,17 @@ if (DEBUG):
 # ax.plot([median, median], ax.get_ylim())
 # plt.annotate('Median: %s' % median, xy=(median + 1, ax.get_ylim()[1]-10))
 
+<<<<<<< HEAD
 print("simuls")
 print(np.shape(simuls))
 print(simuls)
 
 g = simuls.groupby('Team')
 
+=======
+
+g = simuls.groupby('Team')
+>>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
 season_hdis = pd.DataFrame({'points_lower': g.points.quantile(.05),
                             'points_upper': g.points.quantile(.95),
                             'goals_for_lower': g.gf.quantile(.05),
@@ -945,6 +981,7 @@ season_hdis = pd.DataFrame({'points_lower': g.points.quantile(.05),
                             'goals_against_lower': g.ga.quantile(.05),
                             'goals_against_upper': g.ga.quantile(.95),
                             })
+<<<<<<< HEAD
 if (DEBUG):
   print("season_hdis:")
   print(np.shape(season_hdis))
@@ -976,6 +1013,12 @@ column_order = ['Team', 'points_lower', 'Pts', 'points_upper',
                 'goals_for_lower', 'goals_scored', 'goals_for_median', 'goals_for_upper',
                 'goals_against_lower', 'goals_lost', 'goals_against_upper',]
 
+=======
+season_hdis = pd.merge(season_hdis, df_observed, left_index=True, right_on='Team') #[19, 15]
+column_order = ['Team', 'points_lower', 'Pts', 'points_upper', 
+                'goals_for_lower', 'goals_scored', 'goals_for_median', 'goals_for_upper',
+                'goals_against_lower', 'goals_lost', 'goals_against_upper',]
+>>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
 season_hdis = season_hdis[column_order]
 season_hdis['relative_goals_upper'] = season_hdis.goals_for_upper - season_hdis.goals_for_median
 season_hdis['relative_goals_lower'] = season_hdis.goals_for_median - season_hdis.goals_for_lower
@@ -985,9 +1028,12 @@ season_hdis = season_hdis.reset_index()
 season_hdis['x'] = season_hdis.index + .5
 season_hdis
 
+<<<<<<< HEAD
 #save season_hdis
 season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis.npy"))
 
+=======
+>>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
 fig, axs = plt.subplots(figsize=(10,6))
 axs.scatter(season_hdis.x, season_hdis.goals_scored, color=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals For')
 axs.errorbar(season_hdis.x, season_hdis.goals_for_median, 
@@ -999,9 +1045,12 @@ axs.set_ylabel('Goals Scored')
 axs.set_xlim(0, 20)
 axs.legend()
 _= axs.set_xticks(season_hdis.index + .5)
+<<<<<<< HEAD
 if (DEBUG):
   print("season_hdis['Team'].values")
   print(season_hdis['Team'].values)
+=======
+>>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
 _= axs.set_xticklabels(season_hdis['Team'].values, rotation=45)
 
 #save fig
