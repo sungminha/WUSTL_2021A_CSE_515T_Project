@@ -55,7 +55,7 @@ if (DEBUG2):
   iteration = 200000  # how many iterations?
   burn = 40000  # how many to discard from the beginning of the iterations?
   thin = 20  # how often to record?
-  num_simul=2000 #for simulation my MCMC
+  num_simul=1000 #for simulation my MCMC
 elif (DEBUG):
   #for testing
   iteration = 200  # how many iterations?
@@ -692,14 +692,23 @@ defence_param = total_stat['defs']
 mean_defence_team = defence_param['mean']
 
 # teams for teams indexing
-teams_file = os.path.join(DATA_DIR, 'team_index.csv')
-if not (os.path.isfile(teams_file)):
+if not DEBUG:
+  teams_file = os.path.join(DATA_DIR, 'team_index.csv')
+  if not (os.path.isfile(teams_file)):
     print("".join(
         ["ERROR: teams file (", str(teams_file), ") does not exist."]), flush=True)
     sys.exit()
-teams = pd.read_csv(teams_file)
 
-df_avg = pd.DataFrame({
+if (DEBUG):
+  df_avg = pd.DataFrame({
+                        'team': teams.Team.values,
+                        'avg_att': atts.stats()['mean'],
+                        'avg_def': defs.stats()['mean'],
+                      },
+                      index=teams.index)
+else:
+  teams = pd.read_csv(teams_file)
+  df_avg = pd.DataFrame({
                         'team': teams.Team.values,
                         'avg_att': atts.stats()['mean'],
                         'avg_def': defs.stats()['mean'],
@@ -986,7 +995,7 @@ season_hdis['x'] = season_hdis.index + .5
 season_hdis
 
 #save season_hdis
-season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis.npy"))
+season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis.csv"))
 
 fig, axs = plt.subplots(figsize=(10,6))
 axs.scatter(season_hdis.x, season_hdis.goals_scored, color=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals For')
