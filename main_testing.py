@@ -56,10 +56,10 @@ plot_confidence_interval_percent = (plot_confidence_interval_upper_cut - plot_co
 
 if (DEBUG2):
   #for testing
-  iteration = 200000  # how many iterations?
-  burn = 40000  # how many to discard from the beginning of the iterations?
+  iteration = 400000  # how many iterations?
+  burn = 80000  # how many to discard from the beginning of the iterations?
   thin = 20  # how often to record?
-  num_simul=1000 #for simulation my MCMC
+  num_simul=5000 #for simulation my MCMC
 elif (DEBUG):
   #for testing
   iteration = 200  # how many iterations?
