@@ -1148,7 +1148,7 @@ del season_hdis
 season_hdis = season_hdis_copy.copy()
 season_hdis["error_Pts"] = (season_hdis["Pts"] - season_hdis["points_median"])/season_hdis["Pts"]
 season_hdis["error_goals_scored"] = (season_hdis["goals_scored"] - season_hdis["goals_for_median"])/season_hdis["goals_scored"]
-season_hdis["error_goals_scored"] = (season_hdis["goals_lost"] - season_hdis["goals_against_median"])/season_hdis["goals_lost"]
+season_hdis["error_goals_lost"] = (season_hdis["goals_lost"] - season_hdis["goals_against_median"])/season_hdis["goals_lost"]
 
 #save season_hdis
 season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis_with_error.csv"))
