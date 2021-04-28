@@ -59,7 +59,7 @@ if (DEBUG2):
   iteration = 200000  # how many iterations?
   burn = 40000  # how many to discard from the beginning of the iterations?
   thin = 20  # how often to record?
-  num_simul=2000 #for simulation my MCMC
+  num_simul=1000 #for simulation my MCMC
 elif (DEBUG):
   #for testing
   iteration = 200  # how many iterations?
@@ -1024,7 +1024,7 @@ axs.scatter(season_hdis.x, season_hdis.goals_scored, color=sns.palettes.color_pa
 axs.errorbar(season_hdis.x, season_hdis.goals_for_median, 
              yerr=(season_hdis[['relative_goals_lower', 'relative_goals_upper']].values).T, 
              fmt='s', color=sns.palettes.color_palette()[5], label='Simulations')
-axs.set_title("".join(['Actual Goals For, and ', str(plot_confidence_interval_percent), "% Interval from Simulations, by Team"]))
+axs.set_title("".join(['Actual Goals Scored, and ', str(plot_confidence_interval_percent), "% Interval from Simulations, by Team"]))
 axs.set_xlabel('Team')
 axs.set_ylabel('Goals Scored')
 axs.set_xlim(0, 20)
@@ -1082,7 +1082,7 @@ axs.scatter(season_hdis.x, season_hdis.goals_lost, color=sns.palettes.color_pale
 axs.errorbar(season_hdis.x, season_hdis.goals_against_median, 
              yerr=(season_hdis[['relative_goals_against_lower', 'relative_goals_against_upper']].values).T, 
              fmt='s', color=sns.palettes.color_palette()[5], label='Simulations')
-axs.set_title("".join(['Actual Goals Against, and ', str(plot_confidence_interval_percent), "% Interval from Simulations, by Team"]))
+axs.set_title("".join(['Actual Goals Conceded, and ', str(plot_confidence_interval_percent), "% Interval from Simulations, by Team"]))
 axs.set_xlabel('Team')
 axs.set_ylabel('Goals Conceded')
 axs.set_xlim(0, 20)
@@ -1098,3 +1098,57 @@ output_actual_goals_against_vs_simulation_plot = os.path.join(OUTPUT_DIR, "".joi
     ["simulation_vs_real_goals_against_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
 plt.savefig(fname=output_actual_goals_against_vs_simulation_plot)
 plt.close()
+
+## plot histogram of Man City
+#for points
+plot_team_name = "Man City"
+for plot_team_name in np.sort(np.unique(teams['Team'].values)):
+  print("".join(["Plotting simulation histogram for team, ", str(plot_team_name)]))
+
+  ax = simuls.points[simuls.Team == plot_team_name].hist(figsize=(7,5))
+  median = simuls.points[simuls.Team == plot_team_name].median()
+  ax.set_title("".join([str(plot_team_name), " 2017-18 Points, ", str(num_simul), " simulations"]))
+  ax.plot([median, median], ax.get_ylim())
+  plt.annotate('Median: %s' % median, xy=(median + 1, 0.5*(ax.get_ylim()[1]-ax.get_ylim()[0])))
+
+  #save fig
+  output_hist_simul_per_team = os.path.join(OUTPUT_DIR, "".join(
+      ["Per_Team_", str(plot_team_name), "_simulation_histogram_points_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+  plt.savefig(fname=output_hist_simul_per_team)
+  plt.close()
+
+  # for goals for
+  ax = simuls.gf[simuls.Team == plot_team_name].hist(figsize=(7,5))
+  median = simuls.gf[simuls.Team == plot_team_name].median()
+  ax.set_title("".join([str(plot_team_name), " 2017-18 Goals Scored, ", str(num_simul), " simulations"]))
+  ax.plot([median, median], ax.get_ylim())
+  plt.annotate('Median: %s' % median, xy=(median + 1, 0.5*(ax.get_ylim()[1]-ax.get_ylim()[0])))
+
+  #save fig
+  output_hist_simul_per_team = os.path.join(OUTPUT_DIR, "".join(
+      ["Per_Team_", str(plot_team_name), "_simulation_histogram_goals_for_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+  plt.savefig(fname=output_hist_simul_per_team)
+  plt.close()
+
+  # for goals against
+  ax = simuls.ga[simuls.Team == plot_team_name].hist(figsize=(7,5))
+  median = simuls.ga[simuls.Team == plot_team_name].median()
+  ax.set_title("".join([str(plot_team_name), " 2017-18 Goals Conceded, ", str(num_simul), " simulations"]))
+  ax.plot([median, median], ax.get_ylim())
+  plt.annotate('Median: %s' % median, xy=(median + 1, 0.5*(ax.get_ylim()[1]-ax.get_ylim()[0])))
+
+  #save fig
+  output_hist_simul_per_team = os.path.join(OUTPUT_DIR, "".join(
+      ["Per_Team_", str(plot_team_name), "_simulation_histogram_goals_against_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+  plt.savefig(fname=output_hist_simul_per_team)
+  plt.close()
+
+## calculate error
+del season_hdis
+season_hdis = season_hdis_copy.copy()
+season_hdis["error_Pts"] = (season_hdis["Pts"] - season_hdis["points_median"])/season_hdis["Pts"]
+season_hdis["error_goals_scored"] = (season_hdis["goals_scored"] - season_hdis["goals_for_median"])/season_hdis["goals_scored"]
+season_hdis["error_goals_scored"] = (season_hdis["goals_lost"] - season_hdis["goals_against_median"])/season_hdis["goals_lost"]
+
+#save season_hdis
+season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis_with_error.csv"))
