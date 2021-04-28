@@ -55,7 +55,7 @@ if (DEBUG2):
   iteration = 200000  # how many iterations?
   burn = 40000  # how many to discard from the beginning of the iterations?
   thin = 20  # how often to record?
-  num_simul=1000 #for simulation my MCMC
+  num_simul=2000 #for simulation my MCMC
 elif (DEBUG):
   #for testing
   iteration = 200  # how many iterations?
@@ -270,6 +270,7 @@ if (USE_MU_ATT_and_MU_DEF):
 print("".join(["Defined hyperpriors"]), flush=True)
 
 # team-specific parameters
+
 if (USE_MU_ATT_and_MU_DEF):
     atts_star = pymc.Normal("atts_star",
                             mu=mu_att,
@@ -733,6 +734,7 @@ if (DEBUG):
 df_data = pd.read_csv(data_file, sep=",")
 if not (DEBUG):
   df_team = pd.read_csv(team_file, sep=",")
+
 if not (DEBUG):
   if not 'Pts' in df_observed.columns: #if it already exists, no need to calculate and append
     points = np.zeros(shape = (np.shape(df_team)[0]))
@@ -769,10 +771,13 @@ if not (DEBUG):
     df_observed['Pts'] = points
     df_observed.to_csv(goal_scored_path, index=False) #save
 
-if not 'Pts' in df_observed.columns: #if it already exists, no need to calculate and append
-  points = np.zeros(shape = (np.shape(df_team)[0]))
-  for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1): 
-    match_home = df_data[df_data['HomeTeam'] == team_index]
+###
+# simulate the seasons
+def simulate_season():
+    """
+    Simulate a season once, using one random draw from the mcmc chain. 
+    """
+    num_samples = atts.trace().shape[0] #atts.trace() is [(iteration - burn)/thin, 20] shape - 80 for testing
     # if (DEBUG):
     #   print("".join(["num_samples: ", str(num_samples)]))
     draw = np.random.randint(0, num_samples) #(iteration - burn) / thin
@@ -866,10 +871,14 @@ def create_season_table(season):
     if (DEBUG):
     #   print("season:")
     #   print(np.shape(season))
+    #   print(season)
       g = season.groupby('i_away')
     else:
       g = season.groupby('AwayTeam')    
     away = pd.DataFrame({'away_goals': g.away_goals.sum(),
+                         'away_goals_against': g.home_goals.sum(),
+                         'away_wins': g.away_win.sum(),
+                         'away_draws': g.away_draw.sum(),
                          'away_losses': g.away_loss.sum()
                          })
     df = home.join(away)
@@ -926,7 +935,16 @@ print("simuls")
 print(np.shape(simuls))
 print(simuls)
 
-=======
+g = simuls.groupby('Team')
+
+season_hdis = pd.DataFrame({'points_lower': g.points.quantile(.05),
+                            'points_upper': g.points.quantile(.95),
+                            'goals_for_lower': g.gf.quantile(.05),
+                            'goals_for_median': g.gf.median(),
+                            'goals_for_upper': g.gf.quantile(.95),
+                            'goals_against_lower': g.ga.quantile(.05),
+                            'goals_against_upper': g.ga.quantile(.95),
+                            })
 if (DEBUG):
   print("season_hdis:")
   print(np.shape(season_hdis))
@@ -958,12 +976,6 @@ column_order = ['Team', 'points_lower', 'Pts', 'points_upper',
                 'goals_for_lower', 'goals_scored', 'goals_for_median', 'goals_for_upper',
                 'goals_against_lower', 'goals_lost', 'goals_against_upper',]
 
-=======
-season_hdis = pd.merge(season_hdis, df_observed, left_index=True, right_on='Team') #[19, 15]
-column_order = ['Team', 'points_lower', 'Pts', 'points_upper', 
-                'goals_for_lower', 'goals_scored', 'goals_for_median', 'goals_for_upper',
-                'goals_against_lower', 'goals_lost', 'goals_against_upper',]
->>>>>>> c908213cbbd125a24b411701ff624e2db3798e13
 season_hdis = season_hdis[column_order]
 season_hdis['relative_goals_upper'] = season_hdis.goals_for_upper - season_hdis.goals_for_median
 season_hdis['relative_goals_lower'] = season_hdis.goals_for_median - season_hdis.goals_for_lower
@@ -987,6 +999,9 @@ axs.set_ylabel('Goals Scored')
 axs.set_xlim(0, 20)
 axs.legend()
 _= axs.set_xticks(season_hdis.index + .5)
+if (DEBUG):
+  print("season_hdis['Team'].values")
+  print(season_hdis['Team'].values)
 _= axs.set_xticklabels(season_hdis['Team'].values, rotation=45)
 
 #save fig
