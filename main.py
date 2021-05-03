@@ -19,7 +19,7 @@ data_file = os.path.join(DATA_DIR, 'final_data.csv')
 team_file = os.path.join(DATA_DIR, 'team_index.csv')
 
 # parameters for model training
-iteration = 200000  # how many iterations?
+iteration = 20000  # how many iterations?
 burn = 4000  # how many to discard from the beginning of the iterations?
 thin = 20  # how often to record?
 
@@ -60,6 +60,11 @@ observed_away_yc = df['AY']
 observed_home_rc = df['HR']
 observed_away_rc = df['AR']
 
+observed_home_streak = df['Home Streak']
+observed_away_streak = df['Away Streak']
+observed_home_form = df['Home Form']
+observed_away_form = df['Away Form']
+
 
 home_team = df['HomeTeam'] - 1  # indexing should start at zero not one
 away_team = df['AwayTeam'] - 1  # indexing should start at zero not one
@@ -88,6 +93,9 @@ att_yc_starting_points = np.log(g['HY'].mean())
 test1 = g['HR'].mean()
 test1[test1==0] = 1
 att_rc_starting_points = np.log(test1)
+att_streak_starting_points = np.log(g['Home Streak'].mean())
+att_form_starting_points = np.log(g['Home Form'].mean())
+
 
 g = df.groupby('AwayTeam')
 def_starting_points = -np.log(g['FTAG'].mean())
@@ -99,7 +107,8 @@ defs_yc_starting_points = -np.log(g['AY'].mean())
 test2 = g['AR'].mean()
 test2[test2==0] = 1
 defs_rc_starting_points = -np.log(test2)
-
+defs_streak_starting_points = -np.log(g['Away Streak'].mean())
+defs_form_starting_points = -np.log(g['Away Form'].mean())
 
 
 # hyperpriors
@@ -137,6 +146,16 @@ mu_att_rc = pymc.Normal('mu_att_rc', 0, .0001, value=0)
 mu_def_rc = pymc.Normal('mu_def_rc', 0, .0001, value=0)
 tau_att_rc = pymc.Gamma('tau_att_rc', .1, .1, value = 10)
 tau_def_rc = pymc.Gamma('tau_def_rc', .1, .1, value = 10)
+
+mu_att_streak = pymc.Normal('mu_att_streak', 0, .0001, value=0)
+mu_def_streak = pymc.Normal('mu_def_streak', 0, .0001, value=0)
+tau_att_streak = pymc.Gamma('tau_att_streak', .1, .1, value = 10)
+tau_def_streak = pymc.Gamma('tau_def_streak', .1, .1, value = 10)
+
+mu_att_form = pymc.Normal('mu_att_form', 0, .0001, value=0)
+mu_def_form = pymc.Normal('mu_def_form', 0, .0001, value=0)
+tau_att_form = pymc.Gamma('tau_att_form', .1, .1, value = 10)
+tau_def_form = pymc.Gamma('tau_def_form', .1, .1, value = 10)
 
 
 # original paper without tweaks
@@ -238,6 +257,28 @@ defs_rc_star = pymc.Normal("defs_rc_star",
                               size = num_teams,
                               value = defs_rc_starting_points.values)
 
+atts_streak_star = pymc.Normal("atts_streak_star",
+                              mu = mu_att_streak,
+                              tau = tau_att_streak,
+                              size = num_teams,
+                              value = att_streak_starting_points.values)
+defs_streak_star = pymc.Normal("defs_streak_star",
+                              mu = mu_def_streak,
+                              tau = tau_def_streak,
+                              size = num_teams,
+                              value = defs_streak_starting_points.values)
+
+atts_form_star = pymc.Normal("atts_form_star",
+                              mu = mu_att_form,
+                              tau = tau_att_form,
+                              size = num_teams,
+                              value = att_form_starting_points.values)
+defs_form_star = pymc.Normal("defs_form_star",
+                              mu = mu_def_form,
+                              tau = tau_def_form,
+                              size = num_teams,
+                              value = defs_form_starting_points.values)
+
                               
 print("".join(["Defined team-specific parameters"]), flush=True)
 
@@ -286,6 +327,18 @@ def atts_rc(atts_rc_star = atts_rc_star):
     atts_rc = atts_rc - np.mean(atts_rc_star)
     return atts_rc
 
+@pymc.deterministic
+def atts_streak(atts_streak_star = atts_streak_star):
+    atts_streak = atts_streak_star.copy()
+    atts_streak = atts_streak - np.mean(atts_streak_star)
+    return atts_streak
+
+@pymc.deterministic
+def atts_form(atts_form_star = atts_form_star):
+    atts_form = atts_form_star.copy()
+    atts_form = atts_form - np.mean(atts_form_star)
+    return atts_form
+
 
 
 @pymc.deterministic
@@ -329,6 +382,18 @@ def defs_rc(defs_rc_star = defs_rc_star):
     defs_rc = defs_rc_star.copy()
     defs_rc = defs_rc - np.mean(defs_rc_star)
     return defs_rc
+
+@pymc.deterministic
+def defs_streak(defs_streak_star = defs_streak_star):
+    defs_streak = defs_streak_star.copy()
+    defs_streak = defs_streak - np.mean(defs_streak_star)
+    return defs_streak
+
+@pymc.deterministic
+def defs_form(defs_form_star = defs_form_star):
+    defs_form = defs_form_star.copy()
+    defs_form = defs_form - np.mean(defs_form_star)
+    return defs_form
 # To-Do: try replacing with Skellum
 
 
@@ -350,6 +415,10 @@ def home_theta(home_team=home_team,
                defs_yc = defs_yc,
                atts_rc = atts_rc,
                defs_rc = defs_rc,
+               atts_streak = atts_streak,
+               defs_streak = defs_streak,
+               atts_form = atts_form,
+               defs_form = defs_form,
                intercept=intercept):
     return np.exp(intercept +
                   home +
@@ -360,7 +429,11 @@ def home_theta(home_team=home_team,
                   atts_shots_target[home_team]+
                   defs_shots_target[away_team]+
                   atts_corners[home_team]+
-                  defs_corners[away_team]-
+                  defs_corners[away_team]+
+                  atts_streak[home_team]+
+                  defs_streak[away_team]+
+                  atts_form[home_team]+
+                  defs_form[away_team]-
                   (atts_fouls[home_team]+
                   defs_fouls[away_team]+
                   atts_yc[home_team]+
@@ -387,6 +460,10 @@ def away_theta(home_team=home_team,
                defs_yc = defs_yc,
                atts_rc = atts_rc,
                defs_rc = defs_rc,
+               atts_streak = atts_streak,
+               defs_streak = defs_streak,
+               atts_form = atts_form,
+               defs_form = defs_form,
                intercept=intercept):
     return np.exp(intercept +
                   atts[away_team] +
@@ -396,7 +473,11 @@ def away_theta(home_team=home_team,
                   atts_shots_target[away_team]+
                   defs_shots_target[home_team]+
                   atts_corners[away_team]+
-                  defs_corners[home_team]-
+                  defs_corners[home_team]+
+                  atts_streak[away_team]+
+                  defs_streak[home_team]+
+                  atts_form[away_team]+
+                  defs_form[home_team]-
                   (atts_fouls[away_team]+
                   defs_fouls[home_team]+
                   atts_yc[away_team]+
@@ -427,6 +508,8 @@ mcmc = pymc.MCMC([home, intercept, tau_att, tau_def,
                   atts_fouls_star, defs_fouls_star, atts_fouls, defs_fouls,
                   atts_yc_star, defs_yc_star, atts_yc, defs_yc,
                   atts_rc_star, defs_rc_star, atts_rc, defs_rc,
+                  atts_streak_star, defs_streak_star, atts_streak, defs_streak,
+                  atts_form_star, defs_form_star, atts_form, defs_form,
                   home_goals, away_goals])
 map_ = pymc.MAP(mcmc)
 map_.fit()
@@ -511,10 +594,13 @@ plt.close()
 
 total_stat = mcmc.stats()
 attack_param = total_stat['atts']
-mean_attack_team = attack_param['mean']
+mean_attack_team = atts.stats()['mean'] + atts_shots.stats()['mean'] + atts_shots_target.stats()['mean'] + atts_corners.stats()['mean'] - atts_fouls.stats()['mean'] - atts_yc.stats()['mean'] - atts_rc.stats()['mean'] + atts_streak.stats()['mean'] + atts_form.stats()['mean']
+
+                    
 
 defence_param = total_stat['defs']
-mean_defence_team = defence_param['mean']
+mean_defence_team = defs.stats()['mean'] + defs_shots.stats()['mean'] + defs_shots_target.stats()['mean'] + defs_corners.stats()['mean'] - defs_fouls.stats()['mean'] - defs_yc.stats()['mean'] - defs_rc.stats()['mean'] + defs_streak.stats()['mean'] + defs_form.stats()['mean']
+
 
 # making predictions
 # observed_season = DATA_DIR + 'premier_league_13_14_table.csv'
@@ -529,26 +615,34 @@ if not (os.path.isfile(teams_file)):
     sys.exit()
 teams = pd.read_csv(teams_file)
 
+# df_avg = pd.DataFrame({
+#                         'team': teams.Team.values,
+#                         'avg_att': atts.stats()['mean'],
+#                         'avg_def': defs.stats()['mean'],
+#                       },
+#                       index=teams.index)
+
 df_avg = pd.DataFrame({
                         'team': teams.Team.values,
-                        'avg_att': atts.stats()['mean'],
-                        'avg_def': defs.stats()['mean'],
+                        'avg_att': mean_attack_team,
+                        'avg_def': mean_defence_team,
                       },
                       index=teams.index)
+
 if (VERBOSE):
   print("df_avg:")
   print(df_avg)
 
-fig, ax = plt.subplots(figsize=(8, 6))
+fig, ax = plt.subplots(figsize=(15, 15))
 ax.plot(df_avg.avg_att,  df_avg.avg_def, 'o')
 
 for label, x, y in zip(df_avg.team.values, df_avg.avg_att.values, df_avg.avg_def.values):
-    ax.annotate(label, xy=(x, y), xytext = (-5,5), textcoords='offset points')
-ax.set_title('Attack vs Defense average effect: 18-19 Premier League')
-ax.set_xlabel('Average attack effect')
-ax.set_ylabel('Average defense effect')
+    ax.annotate(label, xy=(x, y), xytext = (5,5), textcoords='offset points',fontsize=15)
+ax.set_title('Attack vs Defense average effect: 2017-18 Premier League',fontsize=18)
+ax.set_xlabel('Average attack effect',fontsize=18)
+ax.set_ylabel('Average defense effect',fontsize=18)
 ax.legend()
-#plt.show()
+plt.show()
 
 #save figure of scatterplot of att vs def
 plt.savefig(fname=os.path.join(CHART_DIR, "".join(
@@ -556,16 +650,74 @@ plt.savefig(fname=os.path.join(CHART_DIR, "".join(
 plt.close()
 
 
+# Posterior Plot
+df_hpd = pd.DataFrame(atts.stats()['95% HPD interval'].T, 
+                      columns=['hpd_low', 'hpd_high'], 
+                      index=teams.Team.values)
+# df_median = pd.DataFrame(atts.stats()['quantiles'][50], 
+#                          columns=['hpd_median'], 
+#                          index=teams.Team.values)
+
+df_median = pd.DataFrame(atts.stats()['mean'], 
+                      columns=['hpd_median'], 
+                      index=teams.Team.values)
+df_hpd = df_hpd.join(df_median)
+df_hpd['relative_lower'] = df_hpd.hpd_median - df_hpd.hpd_low
+df_hpd['relative_upper'] = df_hpd.hpd_high - df_hpd.hpd_median
+df_hpd = df_hpd.sort_values(by='hpd_median')
+df_hpd = df_hpd.reset_index()
+df_hpd['x'] = df_hpd.index + .5
+
+
+fig, axs = plt.subplots(figsize=(12,10))
+axs.errorbar(df_hpd.x, df_hpd.hpd_median, 
+             yerr=(df_hpd[['relative_lower', 'relative_upper']].values).T, 
+             fmt='o')
+axs.set_title('HPD of Attack Strength, by Team')
+# axs.set_xlabel('Team',fontsize=15)
+# axs.set_ylabel('Posterior Attack Strength',fontsize=15)
+_= axs.set_xticks(df_hpd.index + .5)
+_= axs.set_xticklabels(df_hpd['index'].values, rotation=30, fontsize = 12)
+
+
+df_hpd1 = pd.DataFrame(defs.stats()['95% HPD interval'].T, 
+                      columns=['hpd_low', 'hpd_high'], 
+                      index=teams.Team.values)
+df_median1 = pd.DataFrame(defs.stats()['mean'], 
+                      columns=['hpd_median'], 
+                      index=teams.Team.values)
+df_hpd1 = df_hpd1.join(df_median1)
+df_hpd1['relative_lower'] = df_hpd1.hpd_median - df_hpd1.hpd_low
+df_hpd1['relative_upper'] = df_hpd1.hpd_high - df_hpd1.hpd_median
+df_hpd1 = df_hpd1.sort_values(by='hpd_median')
+df_hpd1 = df_hpd1.reset_index()
+df_hpd1['x'] = df_hpd1.index + .5
+
+
+fig, axs = plt.subplots(figsize=(12,10))
+axs.errorbar(df_hpd1.x, df_hpd1.hpd_median, 
+             yerr=(df_hpd1[['relative_lower', 'relative_upper']].values).T, 
+             fmt='o')
+axs.set_title('HPD of Defence Strength, by Team')
+# axs.set_xlabel('Team',fontsize=15)
+# axs.set_ylabel('Posterior Attack Strength',fontsize=15)
+_= axs.set_xticks(df_hpd1.index + .5)
+_= axs.set_xticklabels(df_hpd1['index'].values, rotation=30, fontsize = 12)
+
+
 ###
-# simulate the seasons
+## simulate the seasons
 def simulate_season():
     """
     Simulate a season once, using one random draw from the mcmc chain. 
     """
     num_samples = atts.trace().shape[0]
     draw = np.random.randint(0, num_samples)
-    atts_draw = pd.DataFrame({'att': atts.trace()[draw, :],})
-    defs_draw = pd.DataFrame({'def': defs.trace()[draw, :],})
+    atts_total = atts.trace() + atts_shots.trace() + atts_shots_target.trace() + atts_corners.trace() - atts_fouls.trace() - atts_yc.trace() - atts_rc.trace() + atts_streak.trace() + atts_form.trace()
+    defs_total = defs.trace() + defs_shots.trace() + defs_shots_target.trace() + defs_corners.trace() - defs_fouls.trace() - defs_yc.trace() - defs_rc.trace() + defs_streak.trace() + defs_form.trace()
+    
+    atts_draw = pd.DataFrame({'att': atts_total[draw, :],})
+    defs_draw = pd.DataFrame({'def': defs_total[draw, :],})
     home_draw = home.trace()[draw]
     intercept_draw = intercept.trace()[draw]
     season = df.copy()
@@ -578,12 +730,12 @@ def simulate_season():
     season['home'] = home_draw
     season['intercept'] = intercept_draw
     season['home_theta'] = season.apply(lambda x: math.exp(x['intercept'] + 
-                                                           x['home'] + 
-                                                           x['att_home'] + 
-                                                           x['def_away']), axis=1)
+                                                            x['home'] + 
+                                                            x['att_home'] + 
+                                                            x['def_away']), axis=1)
     season['away_theta'] = season.apply(lambda x: math.exp(x['intercept'] + 
-                                                           x['att_away'] + 
-                                                           x['def_home']), axis=1)
+                                                            x['att_away'] + 
+                                                            x['def_home']), axis=1)
     season['home_goals'] = season.apply(lambda x: np.random.poisson(x['home_theta']), axis=1)
     season['away_goals'] = season.apply(lambda x: np.random.poisson(x['away_theta']), axis=1)
     season['home_outcome'] = season.apply(lambda x: 'win' if x['home_goals'] > x['away_goals'] else 
@@ -602,18 +754,18 @@ def create_season_table(season):
     """
     g = season.groupby('HomeTeam')    
     home = pd.DataFrame({'home_goals': g.home_goals.sum(),
-                         'home_goals_against': g.away_goals.sum(),
-                         'home_wins': g.home_win.sum(),
-                         'home_draws': g.home_draw.sum(),
-                         'home_losses': g.home_loss.sum()
-                         })
+                          'home_goals_against': g.away_goals.sum(),
+                          'home_wins': g.home_win.sum(),
+                          'home_draws': g.home_draw.sum(),
+                          'home_losses': g.home_loss.sum()
+                          })
     g = season.groupby('AwayTeam')    
     away = pd.DataFrame({'away_goals': g.away_goals.sum(),
-                         'away_goals_against': g.home_goals.sum(),
-                         'away_wins': g.away_win.sum(),
-                         'away_draws': g.away_draw.sum(),
-                         'away_losses': g.away_loss.sum()
-                         })
+                          'away_goals_against': g.home_goals.sum(),
+                          'away_wins': g.away_win.sum(),
+                          'away_draws': g.away_draw.sum(),
+                          'away_losses': g.away_loss.sum()
+                          })
     df = home.join(away)
     df['wins'] = df.home_wins + df.away_wins
     df['draws'] = df.home_draws + df.away_draws
@@ -632,7 +784,7 @@ def create_season_table(season):
     df['relegated'] = (df.position > 17).astype(int)
     return df  
     
-def simulate_seasons(n=100):
+def simulate_seasons(n=1000):
     dfs = []
     for i in range(n):
         s = simulate_season()
@@ -718,8 +870,8 @@ season_hdis
 fig, axs = plt.subplots(figsize=(10,6))
 axs.scatter(season_hdis.x, season_hdis.goals_scored, c=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals For')
 axs.errorbar(season_hdis.x, season_hdis.goals_for_median, 
-             yerr=(season_hdis[['relative_goals_lower', 'relative_goals_upper']].values).T, 
-             fmt='s', c=sns.palettes.color_palette()[5], label='Simulations')
+              yerr=(season_hdis[['relative_goals_lower', 'relative_goals_upper']].values).T, 
+              fmt='s', c=sns.palettes.color_palette()[5], label='Simulations')
 axs.set_title('Actual Goals For, and 90% Interval from Simulations, by Team')
 axs.set_xlabel('Team')
 axs.set_ylabel('Goals Scored')
