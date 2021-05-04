@@ -40,6 +40,12 @@ if not (os.path.isfile(data_file)):
         ["ERROR: data file (", str(data_file), ") does not exist."]), flush=True)
     sys.exit()
 
+# sanity check: check if team file exists
+if not (os.path.isfile(team_file)):
+    print("".join(
+        ["ERROR: team file (", str(team_file), ") does not exist."]), flush=True)
+    sys.exit()
+
 # load data: we assume this is processed data table with indices for team numbers
 df = pd.read_csv(data_file, sep=",")
 team_details = pd.read_csv(team_file, sep=",")
