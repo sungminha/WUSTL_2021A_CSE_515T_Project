@@ -5,7 +5,7 @@ import os
 import sys
 import math
 import warnings
-
+import datetime
 # from IPython.display import Image, HTML
 import numpy as np
 import pandas as pd
@@ -15,13 +15,19 @@ import pymc  # I know folks are switching to "as pm" but I'm just not there yet
 
 DATA_DIR = os.path.join(os.getcwd(), 'data')
 CHART_DIR = os.path.join(os.getcwd(), 'charts')
+current_datetime_string = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+OUTPUT_DIR = os.path.join(os.getcwd(), "".join(["charts_", str(current_datetime_string)]))
+os.mkdir(OUTPUT_DIR) #so that outputs will not be overwritten
 data_file = os.path.join(DATA_DIR, 'final_data.csv')
 team_file = os.path.join(DATA_DIR, 'team_index.csv')
 
 # parameters for model training
-iteration = 20000  # how many iterations?
-burn = 4000  # how many to discard from the beginning of the iterations?
-thin = 20  # how often to record?
+# iteration = 20000  # how many iterations?
+# burn = 4000  # how many to discard from the beginning of the iterations?
+# thin = 20  # how often to record?
+iteration = 2000  # how many iterations?
+burn = 400  # how many to discard from the beginning of the iterations?
+thin = 2  # how often to record?
 
 VERBOSE = False  # more printouts
 USE_MU_ATT_and_MU_DEF = False  # use instead of zero for mean of att and def
