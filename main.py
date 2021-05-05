@@ -848,7 +848,7 @@ def simulate_seasons(n=1000):
     
     fig_goals_for = plt.figure(figsize=(30,24))
     fig_goals_against = plt.figure(figsize=(30,24))
-    fig_goals_points = plt.figure(figsize=(30,24))
+    fig_points = plt.figure(figsize=(30,24))
     for test_team_index in df_team_internal['i']:
         
         df_test_season = pd.DataFrame(dfs_test.sort_values(by="MatchNo"))
@@ -906,7 +906,7 @@ def simulate_seasons(n=1000):
         
         # fig, axs = plt.subplots(figsize=(10,6))
         plt.figure(fig_points.number)
-        axs = plt.add_subplot(5,4,test_team_index)
+        axs = plt.subplot(5,4,test_team_index)
         axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumPts"], label="Actual", alpha = 100, linewidth=3)
         axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumPts"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
         axs.set_xlabel("Match")
@@ -921,7 +921,7 @@ def simulate_seasons(n=1000):
         plt.close()
         
         plt.figure(fig_goals_for.number)
-        axs = plt.add_subplot(5,4,test_team_index)
+        axs = plt.subplot(5,4,test_team_index)
         axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsFor"], label="Actual", alpha = 100, linewidth=3)
         axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsFor"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
         axs.set_xlabel("Match")
@@ -936,7 +936,7 @@ def simulate_seasons(n=1000):
         plt.close()
         
         plt.figure(fig_goals_against.number)
-        axs = plt.add_subplot(5,4,test_team_index)
+        axs = plt.subplot(5,4,test_team_index)
         axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsAgainst"], label="Actual", alpha = 100, linewidth=3)
         axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsAgainst"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
         axs.set_xlabel("Match")
