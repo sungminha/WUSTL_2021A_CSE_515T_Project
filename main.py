@@ -914,11 +914,7 @@ def simulate_seasons(n=1000):
         if (test_team_index == 4):
             axs.legend()
         axs.set_title("".join([str(test_team_name.values[0])]))
-        output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Points_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
-        print("".join(["Saving figure to ", str(output_path)]))
-        plt.savefig(fname=output_path)
-        # plt.show()
-        plt.close()
+
         
         plt.figure(fig_goals_for.number)
         axs = plt.subplot(5,4,test_team_index)
@@ -929,11 +925,7 @@ def simulate_seasons(n=1000):
         if (test_team_index == 4):
             axs.legend()
         axs.set_title("".join([str(test_team_name.values[0])]))
-        output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_For_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
-        print("".join(["Saving figure to ", str(output_path)]))
-        plt.savefig(fname=output_path)
-        # plt.show()
-        plt.close()
+
         
         plt.figure(fig_goals_against.number)
         axs = plt.subplot(5,4,test_team_index)
@@ -944,13 +936,30 @@ def simulate_seasons(n=1000):
         if (test_team_index == 4):
             axs.legend()
         axs.set_title("".join([str(test_team_name.values[0])]))
-        output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_Against_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
-        print("".join(["Saving figure to ", str(output_path)]))
-        plt.savefig(fname=output_path)
-        # plt.show()
-        plt.close()
+
     del df_team_internal
     del df_data_internal
+    
+    plt.figure(fig_goals_for.number)
+    output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Points_Team_", str(burn), "_", str(thin), ".png"]))
+    print("".join(["Saving figure to ", str(output_path)]))
+    plt.savefig(fname=output_path)
+    # plt.show()
+    plt.close()
+    
+    plt.figure(fig_goals_for.number)
+    output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_For_Team_", str(burn), "_", str(thin), ".png"]))
+    print("".join(["Saving figure to ", str(output_path)]))
+    plt.savefig(fname=output_path)
+    # plt.show()
+    plt.close()
+    
+    plt.figure(fig_goals_against.number)
+    output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_Against_", str(burn), "_", str(thin), ".png"]))
+    print("".join(["Saving figure to ", str(output_path)]))
+    plt.savefig(fname=output_path)
+    # plt.show()
+    plt.close()
     return pd.concat(dfs, ignore_index=True)
 
 
