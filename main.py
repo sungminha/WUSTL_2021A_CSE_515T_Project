@@ -25,10 +25,12 @@ team_file = os.path.join(DATA_DIR, 'team_index.csv')
 # iteration = 20000  # how many iterations?
 # burn = 4000  # how many to discard from the beginning of the iterations?
 # thin = 20  # how often to record?
+#testing/debugging
 iteration = 2000  # how many iterations?
 burn = 400  # how many to discard from the beginning of the iterations?
 thin = 2  # how often to record?
-num_simul=1000
+
+num_simul=100
 
 VERBOSE = False  # more printouts
 USE_MU_ATT_and_MU_DEF = False  # use instead of zero for mean of att and def
@@ -49,6 +51,8 @@ if not (os.path.isfile(team_file)):
 
 # load data: we assume this is processed data table with indices for team numbers
 df = pd.read_csv(data_file, sep=",")
+df["ZeroIndexHomeTeam"] = df["HomeTeam"] - 1
+df["ZeroIndexAwayTeam"] = df["AwayTeam"] - 1
 team_details = pd.read_csv(team_file, sep=",")
 
 if (VERBOSE):
@@ -529,90 +533,90 @@ map_.fit()
 mcmc.sample(iter=iteration, burn=burn, thin=thin)
 
 # save statistics
-mcmc.write_csv(os.path.join(CHART_DIR, "".join(["stats_", str(iteration), "_", str(
+mcmc.write_csv(os.path.join(OUTPUT_DIR, "".join(["stats_", str(iteration), "_", str(
     burn), "_", str(thin), ".csv"])), variables=["home", "intercept", "tau_att", "tau_def"])
 
 ## generate plots
 
 # generate plots: home - all (trace, acorr, hist)
 pymc.Matplot.plot(home)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["home_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 # plot individual (trace, hist)
 pymc.Matplot.trace(home)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["home_trace_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 pymc.Matplot.histogram(home)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["home_histogram_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 
 # generate plots: intercept - all (trace, acorr, hist)
 pymc.Matplot.plot(intercept)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["intercept_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 # plot individual (trace, hist)
 pymc.Matplot.trace(intercept)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["intercept_trace_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 pymc.Matplot.histogram(intercept)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["intercept_histogram_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 
 # generate plots: tau_att - all (trace, acorr, hist)
 pymc.Matplot.plot(tau_att)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["tau_att_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 # plot individual (trace, hist)
 pymc.Matplot.trace(tau_att)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["tau_att_trace_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 pymc.Matplot.histogram(tau_att)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["tau_att_histogram_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 
 # generate plots: tau_def - all (trace, acorr, hist)
 pymc.Matplot.plot(tau_def)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["tau_def_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 # plot individual (trace, hist)
 pymc.Matplot.trace(tau_def)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["tau_def_trace_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 pymc.Matplot.histogram(tau_def)
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["tau_def_histogram_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
 total_stat = mcmc.stats()
 attack_param = total_stat['atts']
-mean_attack_team = atts.stats()['mean'] + atts_shots.stats()['mean'] + atts_shots_target.stats()['mean'] + atts_corners.stats()['mean'] - atts_fouls.stats()['mean'] - atts_yc.stats()['mean'] - atts_rc.stats()['mean'] + atts_streak.stats()['mean'] + atts_form.stats()['mean']
+mean_attack_team = atts.stats()['mean'] + atts_shots.stats()['mean'] + atts_shots_target.stats()['mean'] + atts_corners.stats()['mean'] + atts_fouls.stats()['mean'] + atts_yc.stats()['mean'] + atts_rc.stats()['mean'] + atts_streak.stats()['mean'] + atts_form.stats()['mean']
 
                     
 
 defence_param = total_stat['defs']
-mean_defence_team = defs.stats()['mean'] + defs_shots.stats()['mean'] + defs_shots_target.stats()['mean'] + defs_corners.stats()['mean'] - defs_fouls.stats()['mean'] - defs_yc.stats()['mean'] - defs_rc.stats()['mean'] + defs_streak.stats()['mean'] + defs_form.stats()['mean']
+mean_defence_team = defs.stats()['mean'] + defs_shots.stats()['mean'] + defs_shots_target.stats()['mean'] + defs_corners.stats()['mean'] + defs_fouls.stats()['mean'] + defs_yc.stats()['mean'] + defs_rc.stats()['mean'] + defs_streak.stats()['mean'] + defs_form.stats()['mean']
 
 
 # making predictions
@@ -655,10 +659,10 @@ ax.set_title('Attack vs Defense average effect: 2017-18 Premier League',fontsize
 ax.set_xlabel('Average attack effect',fontsize=18)
 ax.set_ylabel('Average defense effect',fontsize=18)
 ax.legend()
-plt.show()
+# plt.show()
 
 #save figure of scatterplot of att vs def
-plt.savefig(fname=os.path.join(CHART_DIR, "".join(
+plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
     ["scatter_avg_att_avg_def_", str(iteration), "_", str(burn), "_", str(thin), ".png"])))
 plt.close()
 
@@ -726,19 +730,21 @@ def simulate_season():
     """
     num_samples = atts.trace().shape[0]
     draw = np.random.randint(0, num_samples)
-    atts_total = atts.trace() + atts_shots.trace() + atts_shots_target.trace() + atts_corners.trace() - atts_fouls.trace() - atts_yc.trace() - atts_rc.trace() + atts_streak.trace() + atts_form.trace()
-    defs_total = defs.trace() + defs_shots.trace() + defs_shots_target.trace() + defs_corners.trace() - defs_fouls.trace() - defs_yc.trace() - defs_rc.trace() + defs_streak.trace() + defs_form.trace()
-    
+    atts_total = atts.trace() + atts_shots.trace() + atts_shots_target.trace() + atts_corners.trace() + atts_fouls.trace() + atts_yc.trace() + atts_rc.trace() + atts_streak.trace() + atts_form.trace()
+    defs_total = defs.trace() + defs_shots.trace() + defs_shots_target.trace() + defs_corners.trace() + defs_fouls.trace() + defs_yc.trace() + defs_rc.trace() + defs_streak.trace() + defs_form.trace()
+    # atts_total = atts.trace() 
+    # defs_total = defs.trace() 
+        
     atts_draw = pd.DataFrame({'att': atts_total[draw, :],})
     defs_draw = pd.DataFrame({'def': defs_total[draw, :],})
     home_draw = home.trace()[draw]
     intercept_draw = intercept.trace()[draw]
     season = df.copy()
-    season = pd.merge(season, atts_draw, left_on='HomeTeam', right_index=True)
-    season = pd.merge(season, defs_draw, left_on='HomeTeam', right_index=True)
+    season = pd.merge(season, atts_draw, left_on='ZeroIndexHomeTeam', right_index=True)
+    season = pd.merge(season, defs_draw, left_on='ZeroIndexHomeTeam', right_index=True)
     season = season.rename(columns = {'att': 'att_home', 'def': 'def_home'})
-    season = pd.merge(season, atts_draw, left_on='AwayTeam', right_index=True)
-    season = pd.merge(season, defs_draw, left_on='AwayTeam', right_index=True)
+    season = pd.merge(season, atts_draw, left_on='ZeroIndexAwayTeam', right_index=True)
+    season = pd.merge(season, defs_draw, left_on='ZeroIndexAwayTeam', right_index=True)
     season = season.rename(columns = {'att': 'att_away', 'def': 'def_away'})
     season['home'] = home_draw
     season['intercept'] = intercept_draw
@@ -765,14 +771,16 @@ def create_season_table(season):
     Using a season dataframe output by simulate_season(), create a summary dataframe with wins, losses, goals for, etc.
     
     """
-    g = season.groupby('HomeTeam')    
+    season['ZeroIndexHomeTeam'] = season["HomeTeam"] - 1
+    season['ZeroIndexAwayTeam'] = season["AwayTeam"] - 1
+    g = season.groupby('HomeTeam')
     home = pd.DataFrame({'home_goals': g.home_goals.sum(),
                           'home_goals_against': g.away_goals.sum(),
                           'home_wins': g.home_win.sum(),
                           'home_draws': g.home_draw.sum(),
                           'home_losses': g.home_loss.sum()
                           })
-    g = season.groupby('AwayTeam')    
+    g = season.groupby('AwayTeam')
     away = pd.DataFrame({'away_goals': g.away_goals.sum(),
                           'away_goals_against': g.home_goals.sum(),
                           'away_wins': g.away_win.sum(),
@@ -787,7 +795,10 @@ def create_season_table(season):
     df['gf'] = df.home_goals + df.away_goals
     df['ga'] = df.home_goals_against + df.away_goals_against
     df['gd'] = df.gf - df.ga
+    # print(teams)
+    # print(df)
     df = pd.merge(teams, df, left_on='i', right_index=True)
+    # df = pd.merge(teams, df, left_on='i', right_on='ZeroIndexi')
     # df = df.sort_index(key='points', ascending=False)
     df = df.sort_values(by='points', ascending=False)
     df = df.reset_index()
@@ -827,6 +838,7 @@ team_file = os.path.join(DATA_DIR, 'team_index.csv')
 df_data = pd.read_csv(data_file, sep=",")
 df_team = pd.read_csv(team_file, sep=",")
 points = np.zeros(shape = (np.shape(df_team)[0]))
+
 for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1): 
   match_home = df_data[df_data['HomeTeam'] == team_index]
   win_home = match_home[match_home['FTHG'] > match_home['FTAG']]
@@ -894,17 +906,36 @@ _= axs.set_xticks(season_hdis.index + .5)
 _= axs.set_xticklabels(season_hdis['Team'].values, rotation=45)
 
 #test plotting match sample code for proof of concept
-test_season = simulate_season()
+num_simul = 1000
+dfs = []
+for i in range(num_simul):
+    if (np.mod(i, 50) == 0):
+        print("".join(["Simulation ", str(i), "/", str(num_simul)]))
+    s = simulate_season()
+    s['iteration'] = i
+    dfs.append(s)
+dfs_test = simulate_season() #for formatting
+fthg_array = np.zeros(shape = (np.shape(dfs_test["home_goals"])[0], num_simul))
+ftag_array = np.zeros(shape = (np.shape(dfs_test["away_goals"])[0], num_simul))
+dfs_test["home_goals"] = 0
+dfs_test["away_goals"] = 0
+for i in range(num_simul):
+    fthg_array[:, i] = dfs[i]["home_goals"]
+    ftag_array[:, i] = dfs[i]["away_goals"]
+dfs_test["home_goals"] = np.median(fthg_array, axis = 1)
+dfs_test["away_goals"] = np.median(ftag_array, axis = 1)
+# dfs_test["home_goals"] = np.mean(fthg_array, axis = 1)
+# dfs_test["away_goals"] = np.mean(ftag_array, axis = 1)
 
 for test_team_index in df_team['i']:
     
-    df_test_season = pd.DataFrame(test_season.sort_values(by="MatchNo"))
-    df_test_season["home_draw"] = df_test_season["FTHG"] == df_test_season["FTAG"]
-    df_test_season["home_win"] = df_test_season["FTHG"] > df_test_season["FTAG"]
-    df_test_season["home_loss"] = df_test_season["FTHG"] < df_test_season["FTAG"]
-    df_test_season["away_draw"] = df_test_season["FTAG"] == df_test_season["FTHG"]
-    df_test_season["away_win"] = df_test_season["FTAG"] > df_test_season["FTHG"]
-    df_test_season["away_loss"] = df_test_season["FTAG"] < df_test_season["FTHG"]
+    df_test_season = pd.DataFrame(dfs_test.sort_values(by="MatchNo"))
+    df_test_season["home_draw"] = df_test_season["home_goals"] == df_test_season["away_goals"]
+    df_test_season["home_win"] = df_test_season["home_goals"] > df_test_season["away_goals"]
+    df_test_season["home_loss"] = df_test_season["home_goals"] < df_test_season["away_goals"]
+    df_test_season["away_draw"] = df_test_season["away_goals"] == df_test_season["home_goals"]
+    df_test_season["away_win"] = df_test_season["away_goals"] > df_test_season["home_goals"]
+    df_test_season["away_loss"] = df_test_season["away_goals"] < df_test_season["home_goals"]
     
     test_team_name = df_team[df_team['i'] == test_team_index]["Team"]
     test_season_index_match_home =df_test_season['HomeTeam'] == test_team_index
@@ -912,14 +943,14 @@ for test_team_index in df_team['i']:
     df_test_season_home = df_test_season[test_season_index_match_home]
     df_test_season_home_copy = df_test_season_home.copy()
     df_test_season_home["Pts"] = 1 * df_test_season_home_copy["home_draw"] + 3 * df_test_season_home_copy["home_win"]
-    df_test_season_home["GoalsFor"] = 1 * df_test_season_home_copy["FTHG"]
-    df_test_season_home["GoalsAgainst"] = 1 * df_test_season_home_copy["FTAG"]
+    df_test_season_home["GoalsFor"] = 1 * df_test_season_home_copy["home_goals"]
+    df_test_season_home["GoalsAgainst"] = 1 * df_test_season_home_copy["away_goals"]
     del df_test_season_home_copy
     df_test_season_away = df_test_season[test_season_index_match_away]
     df_test_season_away_copy = df_test_season_away.copy()
     df_test_season_away["Pts"] = 1 * df_test_season_away_copy["away_draw"] + 3 * df_test_season_away_copy["away_win"]
-    df_test_season_away["GoalsFor"] = 1 * df_test_season_away_copy["FTAG"]
-    df_test_season_away["GoalsAgainst"] = 1 * df_test_season_away_copy["FTHG"]
+    df_test_season_away["GoalsFor"] = 1 * df_test_season_away_copy["away_goals"]
+    df_test_season_away["GoalsAgainst"] = 1 * df_test_season_away_copy["home_goals"]
     del df_test_season_away_copy
     df_test_season_team = pd.concat([df_test_season_home, df_test_season_away], axis=0).sort_values(by="MatchNo")
     df_test_season_team["CumPts"] = df_test_season_team["Pts"].cumsum(axis='index')
@@ -953,7 +984,7 @@ for test_team_index in df_team['i']:
     
     fig, axs = plt.subplots(figsize=(10,6))
     axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumPts"], label="Actual", alpha = 100, linewidth=3)
-    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumPts"], label="Simulation", alpha = 70, linewidth=2)
+    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumPts"], label="".join([str(num_simul), " Simulations"]), alpha = 70, linewidth=2)
     axs.set_xlabel("Match")
     axs.set_ylabel("Cumulative Points")
     axs.legend()
@@ -966,7 +997,7 @@ for test_team_index in df_team['i']:
     
     fig, axs = plt.subplots(figsize=(10,6))
     axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsFor"], label="Actual", alpha = 100, linewidth=3)
-    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsFor"], label="Simulation", alpha = 70, linewidth=2)
+    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsFor"], label="".join([str(num_simul), " Simulations"]), alpha = 70, linewidth=2)
     axs.set_xlabel("Match")
     axs.set_ylabel("Cumulative Goals Scored")
     axs.legend()
@@ -979,7 +1010,7 @@ for test_team_index in df_team['i']:
     
     fig, axs = plt.subplots(figsize=(10,6))
     axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsAgainst"], label="Actual", alpha = 100, linewidth=3)
-    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsAgainst"], label="Simulation", alpha = 70, linewidth=2)
+    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsAgainst"], label="".join([str(num_simul), " Simulations"]), alpha = 70, linewidth=2)
     axs.set_xlabel("Match")
     axs.set_ylabel("Cumulative Goals Conceded")
     axs.legend()
