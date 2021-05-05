@@ -838,11 +838,17 @@ def simulate_seasons(n=1000):
     for i in range(n):
         fthg_array[:, i] = dfs_raw[i]["home_goals"]
         ftag_array[:, i] = dfs_raw[i]["away_goals"]
-    dfs_test["home_goals"] = np.median(fthg_array, axis = 1)
-    dfs_test["away_goals"] = np.median(ftag_array, axis = 1)
-    
+    # dfs_test["home_goals"] = np.median(fthg_array, axis = 1)
+    # dfs_test["away_goals"] = np.median(ftag_array, axis = 1)
+    dfs_test["home_goals"] = np.mean(fthg_array, axis = 1)
+    dfs_test["away_goals"] = np.mean(ftag_array, axis = 1)
+        
     df_data_internal = pd.read_csv(data_file, sep=",")
     df_team_internal = pd.read_csv(team_file, sep=",")
+    
+    fig_goals_for = plt.figure(figsize=(30,24))
+    fig_goals_against = plt.figure(figsize=(30,24))
+    fig_goals_points = plt.figure(figsize=(30,24))
     for test_team_index in df_team_internal['i']:
         
         df_test_season = pd.DataFrame(dfs_test.sort_values(by="MatchNo"))
@@ -898,12 +904,15 @@ def simulate_seasons(n=1000):
         df_actual_season_team["CumGoalsFor"] = df_actual_season_team["GoalsFor"].cumsum(axis='index')
         df_actual_season_team["CumGoalsAgainst"] = df_actual_season_team["GoalsAgainst"].cumsum(axis='index')
         
-        fig, axs = plt.subplots(figsize=(10,6))
+        # fig, axs = plt.subplots(figsize=(10,6))
+        plt.figure(fig_points.number)
+        axs = plt.add_subplot(5,4,test_team_index)
         axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumPts"], label="Actual", alpha = 100, linewidth=3)
         axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumPts"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
         axs.set_xlabel("Match")
         axs.set_ylabel("Cumulative Points")
-        axs.legend()
+        if (test_team_index == 4):
+            axs.legend()
         axs.set_title("".join([str(test_team_name.values[0])]))
         output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Points_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
         print("".join(["Saving figure to ", str(output_path)]))
@@ -911,12 +920,14 @@ def simulate_seasons(n=1000):
         # plt.show()
         plt.close()
         
-        fig, axs = plt.subplots(figsize=(10,6))
+        plt.figure(fig_goals_for.number)
+        axs = plt.add_subplot(5,4,test_team_index)
         axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsFor"], label="Actual", alpha = 100, linewidth=3)
         axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsFor"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
         axs.set_xlabel("Match")
         axs.set_ylabel("Cumulative Goals Scored")
-        axs.legend()
+        if (test_team_index == 4):
+            axs.legend()
         axs.set_title("".join([str(test_team_name.values[0])]))
         output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_For_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
         print("".join(["Saving figure to ", str(output_path)]))
@@ -924,12 +935,14 @@ def simulate_seasons(n=1000):
         # plt.show()
         plt.close()
         
-        fig, axs = plt.subplots(figsize=(10,6))
+        plt.figure(fig_goals_against.number)
+        axs = plt.add_subplot(5,4,test_team_index)
         axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsAgainst"], label="Actual", alpha = 100, linewidth=3)
         axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsAgainst"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
         axs.set_xlabel("Match")
         axs.set_ylabel("Cumulative Goals Conceded")
-        axs.legend()
+        if (test_team_index == 4):
+            axs.legend()
         axs.set_title("".join([str(test_team_name.values[0])]))
         output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_Against_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
         print("".join(["Saving figure to ", str(output_path)]))
