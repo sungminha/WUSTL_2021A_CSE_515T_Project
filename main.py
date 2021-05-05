@@ -611,12 +611,12 @@ plt.close()
 
 total_stat = mcmc.stats()
 attack_param = total_stat['atts']
-mean_attack_team = atts.stats()['mean'] + atts_shots.stats()['mean'] + atts_shots_target.stats()['mean'] + atts_corners.stats()['mean'] + atts_fouls.stats()['mean'] + atts_yc.stats()['mean'] + atts_rc.stats()['mean'] + atts_streak.stats()['mean'] + atts_form.stats()['mean']
+mean_attack_team = atts.stats()['mean'] + atts_shots.stats()['mean'] + atts_shots_target.stats()['mean'] + atts_corners.stats()['mean'] - atts_fouls.stats()['mean'] - atts_yc.stats()['mean'] - atts_rc.stats()['mean'] + atts_streak.stats()['mean'] + atts_form.stats()['mean']
 
                     
 
 defence_param = total_stat['defs']
-mean_defence_team = defs.stats()['mean'] + defs_shots.stats()['mean'] + defs_shots_target.stats()['mean'] + defs_corners.stats()['mean'] + defs_fouls.stats()['mean'] + defs_yc.stats()['mean'] + defs_rc.stats()['mean'] + defs_streak.stats()['mean'] + defs_form.stats()['mean']
+mean_defence_team = defs.stats()['mean'] + defs_shots.stats()['mean'] + defs_shots_target.stats()['mean'] + defs_corners.stats()['mean'] - defs_fouls.stats()['mean'] - defs_yc.stats()['mean'] - defs_rc.stats()['mean'] + defs_streak.stats()['mean'] + defs_form.stats()['mean']
 
 
 # making predictions
@@ -730,8 +730,8 @@ def simulate_season():
     """
     num_samples = atts.trace().shape[0]
     draw = np.random.randint(0, num_samples)
-    atts_total = atts.trace() + atts_shots.trace() + atts_shots_target.trace() + atts_corners.trace() + atts_fouls.trace() + atts_yc.trace() + atts_rc.trace() + atts_streak.trace() + atts_form.trace()
-    defs_total = defs.trace() + defs_shots.trace() + defs_shots_target.trace() + defs_corners.trace() + defs_fouls.trace() + defs_yc.trace() + defs_rc.trace() + defs_streak.trace() + defs_form.trace()
+    atts_total = atts.trace() + atts_shots.trace() + atts_shots_target.trace() + atts_corners.trace() - atts_fouls.trace() - atts_yc.trace() - atts_rc.trace() + atts_streak.trace() + atts_form.trace()
+    defs_total = defs.trace() + defs_shots.trace() + defs_shots_target.trace() + defs_corners.trace() - defs_fouls.trace() - defs_yc.trace() - defs_rc.trace() + defs_streak.trace() + defs_form.trace()
     # atts_total = atts.trace() 
     # defs_total = defs.trace() 
         
