@@ -814,24 +814,26 @@ def create_season_table(season):
     
 def simulate_seasons(n=1000):
     dfs = []
+    dfs_raw = []
     for i in range(n):
         if (np.mod(i, 50) == 0):
             print("".join(["simulate_seasons: ", str(i), "\t/\t", str(n)]))
         s = simulate_season()
+        dfs_raw.append(s)
         t = create_season_table(s)
         t['iteration'] = i
         dfs.append(t)
 
     ##########################################################################
     #plot per team prediction vs real
-    dfs_test = simulate_season() #bogus for filling up
+    dfs_test = simulate_season() #for bogus to fill up
     fthg_array = np.zeros(shape = (np.shape(dfs_test["home_goals"])[0], n))
     ftag_array = np.zeros(shape = (np.shape(dfs_test["away_goals"])[0], n))
     dfs_test["home_goals"] = 0
     dfs_test["away_goals"] = 0
     for i in range(n):
-        fthg_array[:, i] = dfs[i]["home_goals"]
-        ftag_array[:, i] = dfs[i]["away_goals"]
+        fthg_array[:, i] = dfs_raw[i]["home_goals"]
+        ftag_array[:, i] = dfs_raw[i]["away_goals"]
     dfs_test["home_goals"] = np.median(fthg_array, axis = 1)
     dfs_test["away_goals"] = np.median(ftag_array, axis = 1)
     
