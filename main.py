@@ -659,6 +659,8 @@ ax.plot(df_avg.avg_att,  df_avg.avg_def, 'o')
 
 for label, x, y in zip(df_avg.team.values, df_avg.avg_att.values, df_avg.avg_def.values):
     rotation = 20
+    if label == "Swansea":
+        rotation = 40
     ax.annotate(label, xy=(x, y), xytext = (-5,5), textcoords='offset points',fontsize=22, rotation=rotation)
 ax.set_title('Attack vs Defense average effect: 2017-18 Premier League',fontsize=48)
 ax.set_xlabel('Average attack effect',fontsize=34)
@@ -679,7 +681,7 @@ plt.close()
 df_hpd = pd.DataFrame(atts.stats()['95% HPD interval'].T, 
                       columns=['hpd_low', 'hpd_high'], 
                       index=teams.Team.values)
-# df_median = pd.DataFrame(atts.stats()['quantiles'][50], 
+# df_median = pd.DataFrame(atts.stats(), 
 #                          columns=['hpd_median'], 
 #                          index=teams.Team.values)
 
@@ -846,9 +848,9 @@ def simulate_seasons(n=1000):
     df_data_internal = pd.read_csv(data_file, sep=",")
     df_team_internal = pd.read_csv(team_file, sep=",")
     
-    fig_goals_for = plt.figure(figsize=(30,24))
-    fig_goals_against = plt.figure(figsize=(30,24))
-    fig_goals_points = plt.figure(figsize=(30,24))
+    fig_goals_for = plt.figure(figsize=(50,40))
+    fig_goals_against = plt.figure(figsize=(50,40))
+    fig_points = plt.figure(figsize=(50,40))
     for test_team_index in df_team_internal['i']:
         
         df_test_season = pd.DataFrame(dfs_test.sort_values(by="MatchNo"))
@@ -904,43 +906,74 @@ def simulate_seasons(n=1000):
         df_actual_season_team["CumGoalsFor"] = df_actual_season_team["GoalsFor"].cumsum(axis='index')
         df_actual_season_team["CumGoalsAgainst"] = df_actual_season_team["GoalsAgainst"].cumsum(axis='index')
         
+        label_font = 26
+        title_font = 28
+        tick_font = 24
+        tick_font_y = 22
         # fig, axs = plt.subplots(figsize=(10,6))
         plt.figure(fig_points.number)
-        axs = plt.add_subplot(5,4,test_team_index)
-        axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumPts"], label="Actual", alpha = 100, linewidth=3)
-        axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumPts"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
-        axs.set_xlabel("Match")
-        axs.set_ylabel("Cumulative Points")
+        axs = plt.subplot(5,4,test_team_index)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_actual_season_team["CumPts"], label="Actual", alpha = 100, linewidth=3)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_test_season_team["CumPts"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
+        if (test_team_index > 5 * 4 - 4):
+            axs.set_xlabel("Match", fontsize = label_font)
+            plt.xticks(fontsize= tick_font)
+        else:
+            axs.set_xticklabels([])
+        # axs.yticks(fontsize=tick_font_y)
+        axs.tick_params(axis='y', which='major', labelsize=tick_font_y)
+        if (np.mod(test_team_index,4)==1):
+            axs.set_ylabel("Cumulative Points", fontsize = label_font)
         if (test_team_index == 4):
-            axs.legend()
-        axs.set_title("".join([str(test_team_name.values[0])]))
+            # axs.legend(fontsize=20)
+            axs.legend(fontsize=16, bbox_to_anchor=(1.0, 1.0))
+        axs.set_title("".join([str(test_team_name.values[0])]), fontsize= title_font)
 
         
         plt.figure(fig_goals_for.number)
-        axs = plt.add_subplot(5,4,test_team_index)
-        axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsFor"], label="Actual", alpha = 100, linewidth=3)
-        axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsFor"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
-        axs.set_xlabel("Match")
-        axs.set_ylabel("Cumulative Goals Scored")
+        axs = plt.subplot(5,4,test_team_index)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_actual_season_team["CumGoalsFor"], label="Actual", alpha = 100, linewidth=3)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_test_season_team["CumGoalsFor"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
+        if (test_team_index > 5 * 4 - 4):
+            axs.set_xlabel("Match", fontsize = label_font)
+            plt.xticks(fontsize= tick_font)
+        else:
+            axs.set_xticklabels([])
+        # axs.yticks(fontsize=tick_font_y)
+        axs.tick_params(axis='y', which='major', labelsize=tick_font_y)
+        if (np.mod(test_team_index,4)==1):
+            axs.set_ylabel("Cumulative Goals Scored", fontsize=label_font)
         if (test_team_index == 4):
-            axs.legend()
-        axs.set_title("".join([str(test_team_name.values[0])]))
+            # axs.legend(fontsize=20)
+            axs.legend(fontsize=16, bbox_to_anchor=(1.0, 1.0))
+        axs.set_title("".join([str(test_team_name.values[0])]), fontsize= title_font)
 
         
         plt.figure(fig_goals_against.number)
-        axs = plt.add_subplot(5,4,test_team_index)
-        axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsAgainst"], label="Actual", alpha = 100, linewidth=3)
-        axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsAgainst"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
-        axs.set_xlabel("Match")
-        axs.set_ylabel("Cumulative Goals Conceded")
+        axs = plt.subplot(5,4,test_team_index)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_actual_season_team["CumGoalsAgainst"], label="Actual", alpha = 100, linewidth=3)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_test_season_team["CumGoalsAgainst"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
+        if (test_team_index > 5 * 4 - 4):
+            axs.set_xlabel("Match", fontsize = label_font)
+            plt.xticks(fontsize= tick_font)
+        else:
+            axs.set_xticklabels([])
+        # axs.yticks(fontsize=tick_font_y)
+        axs.tick_params(axis='y', which='major', labelsize=tick_font_y)
+        if (np.mod(test_team_index,4)==1):
+            axs.set_ylabel("Cumulative Goals Conceded", fontsize=label_font)
         if (test_team_index == 4):
-            axs.legend()
-        axs.set_title("".join([str(test_team_name.values[0])]))
+            # axs.legend(fontsize=20)
+            axs.legend(fontsize=16, bbox_to_anchor=(1.0, 1.0))
+        axs.set_title("".join([str(test_team_name.values[0])]), fontsize= title_font)
 
     del df_team_internal
     del df_data_internal
     
-    plt.figure(fig_goals_for.number)
+    plt.figure(fig_points.number)
+    fig_points.tight_layout()
+    # plt.suptitle("Cumulative Points over Season")
+
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Points_Team_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
     plt.savefig(fname=output_path)
@@ -948,6 +981,9 @@ def simulate_seasons(n=1000):
     plt.close()
     
     plt.figure(fig_goals_for.number)
+    fig_goals_for.tight_layout()
+    # plt.suptitle("Cumulative Goals Scored over Season")
+
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_For_Team_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
     plt.savefig(fname=output_path)
@@ -955,6 +991,9 @@ def simulate_seasons(n=1000):
     plt.close()
     
     plt.figure(fig_goals_against.number)
+    fig_goals_against.tight_layout()
+    # plt.suptitle("Cumulative Goals Conceded over Season")
+
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_Against_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
     plt.savefig(fname=output_path)
@@ -1203,6 +1242,54 @@ season_hdis["error_goals_lost"] = (season_hdis["goals_lost"] - season_hdis["goal
 
 #save season_hdis
 season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis_with_error.csv"))
+
+season_hdis_printout = season_hdis_copy.copy()
+# season_hdis_printout = season_hdis_printout[["Team", "Pts", "points_lower", "points_median", "points_upper",
+                                            # "goals_scored", "goals_for_lower", "goals_for_median", "goals_for_upper",
+                                            # "goals_lost", "goals_against_lower", "goals_against_median", "goals_against_upper"]]
+season_hdis_printout = season_hdis_printout[["Team", 
+                                             "Pts", "goals_scored", "goals_lost", 
+                                             "points_median", "goals_for_median", "goals_against_median"]]
+season_hdis_printout = season_hdis_printout.rename(columns = {'Pts': 'Points', 'goals_scored': 'Goals Scored', "goals_lost": "Goals Conceded", 
+                                                              "points_median": "Predicted Points", "goals_for_median": "Prediced Goals Scored", "goals_against_median": "Predicted Goals Conceded"})
+#save season_hdis_printout
+season_hdis_printout.to_csv(os.path.join(OUTPUT_DIR, "season_hdis_printout.csv"))
+
+df_hpd_attack_printout = pd.DataFrame(atts.stats()['95% HPD interval'].T, 
+                      columns=['hpd_low', 'hpd_high'], 
+                      index=teams.Team.values)
+df_median_printout = pd.DataFrame(atts.stats()['quantiles'][50], 
+                      columns=['hpd_median'], 
+                      index=teams.Team.values)
+df_mean_printout = pd.DataFrame(atts.stats()['mean'], 
+                      columns=['mean'], 
+                      index=teams.Team.values)
+df_hpd_attack_printout = df_hpd_attack_printout.join(df_median_printout)
+df_hpd_attack_printout = df_hpd_attack_printout.join(df_mean_printout)
+df_hpd_attack_printout = df_hpd_attack_printout[["mean", "hpd_low", "hpd_median", "hpd_high"]]
+df_hpd_attack_printout = df_hpd_attack_printout.rename(columns = {'hpd_low': '2.5%', 'hpd_high': '97.5%', "hpd_median": "median"})
+del df_median_printout
+del df_mean_printout
+
+df_hpd_defense_printout = pd.DataFrame(defs.stats()['95% HPD interval'].T, 
+                      columns=['hpd_low', 'hpd_high'], 
+                      index=teams.Team.values)
+df_median_printout = pd.DataFrame(defs.stats()['quantiles'][50], 
+                      columns=['hpd_median'], 
+                      index=teams.Team.values)
+df_mean_printout = pd.DataFrame(defs.stats()['mean'], 
+                      columns=['mean'], 
+                      index=teams.Team.values)
+df_hpd_defense_printout = df_hpd_defense_printout.join(df_median_printout)
+df_hpd_defense_printout = df_hpd_defense_printout.join(df_mean_printout)
+df_hpd_defense_printout = df_hpd_defense_printout[["mean", "hpd_low", "hpd_median", "hpd_high"]]
+df_hpd_defense_printout = df_hpd_defense_printout.rename(columns = {'hpd_low': '2.5%', 'hpd_high': '97.5%', "hpd_median": "median"})
+del df_median_printout
+del df_mean_printout
+
+#save hpd attack and defense table
+df_hpd_attack_printout.to_csv(os.path.join(OUTPUT_DIR, "df_hpd_attack_printout.csv"))
+df_hpd_defense_printout.to_csv(os.path.join(OUTPUT_DIR, "df_hpd_defense_printout.csv"))
 
 
 # #test plotting match sample code for proof of concept
