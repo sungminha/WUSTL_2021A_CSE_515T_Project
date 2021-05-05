@@ -659,6 +659,8 @@ ax.plot(df_avg.avg_att,  df_avg.avg_def, 'o')
 
 for label, x, y in zip(df_avg.team.values, df_avg.avg_att.values, df_avg.avg_def.values):
     rotation = 20
+    if label == "Swansea":
+        rotation = 40
     ax.annotate(label, xy=(x, y), xytext = (-5,5), textcoords='offset points',fontsize=22, rotation=rotation)
 ax.set_title('Attack vs Defense average effect: 2017-18 Premier League',fontsize=48)
 ax.set_xlabel('Average attack effect',fontsize=34)
@@ -679,7 +681,7 @@ plt.close()
 df_hpd = pd.DataFrame(atts.stats()['95% HPD interval'].T, 
                       columns=['hpd_low', 'hpd_high'], 
                       index=teams.Team.values)
-# df_median = pd.DataFrame(atts.stats()['quantiles'][50], 
+# df_median = pd.DataFrame(atts.stats(), 
 #                          columns=['hpd_median'], 
 #                          index=teams.Team.values)
 
@@ -1240,6 +1242,54 @@ season_hdis["error_goals_lost"] = (season_hdis["goals_lost"] - season_hdis["goal
 
 #save season_hdis
 season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis_with_error.csv"))
+
+season_hdis_printout = season_hdis_copy.copy()
+# season_hdis_printout = season_hdis_printout[["Team", "Pts", "points_lower", "points_median", "points_upper",
+                                            # "goals_scored", "goals_for_lower", "goals_for_median", "goals_for_upper",
+                                            # "goals_lost", "goals_against_lower", "goals_against_median", "goals_against_upper"]]
+season_hdis_printout = season_hdis_printout[["Team", 
+                                             "Pts", "goals_scored", "goals_lost", 
+                                             "points_median", "goals_for_median", "goals_against_median"]]
+season_hdis_printout = season_hdis_printout.rename(columns = {'Pts': 'Points', 'goals_scored': 'Goals Scored', "goals_lost": "Goals Conceded", 
+                                                              "points_median": "Predicted Points", "goals_for_median": "Prediced Goals Scored", "goals_against_median": "Predicted Goals Conceded"})
+#save season_hdis_printout
+season_hdis_printout.to_csv(os.path.join(OUTPUT_DIR, "season_hdis_printout.csv"))
+
+df_hpd_attack_printout = pd.DataFrame(atts.stats()['95% HPD interval'].T, 
+                      columns=['hpd_low', 'hpd_high'], 
+                      index=teams.Team.values)
+df_median_printout = pd.DataFrame(atts.stats()['quantiles'][50], 
+                      columns=['hpd_median'], 
+                      index=teams.Team.values)
+df_mean_printout = pd.DataFrame(atts.stats()['mean'], 
+                      columns=['mean'], 
+                      index=teams.Team.values)
+df_hpd_attack_printout = df_hpd_attack_printout.join(df_median_printout)
+df_hpd_attack_printout = df_hpd_attack_printout.join(df_mean_printout)
+df_hpd_attack_printout = df_hpd_attack_printout[["mean", "hpd_low", "hpd_median", "hpd_high"]]
+df_hpd_attack_printout = df_hpd_attack_printout.rename(columns = {'hpd_low': '2.5%', 'hpd_high': '97.5%', "hpd_median": "median"})
+del df_median_printout
+del df_mean_printout
+
+df_hpd_defense_printout = pd.DataFrame(defs.stats()['95% HPD interval'].T, 
+                      columns=['hpd_low', 'hpd_high'], 
+                      index=teams.Team.values)
+df_median_printout = pd.DataFrame(defs.stats()['quantiles'][50], 
+                      columns=['hpd_median'], 
+                      index=teams.Team.values)
+df_mean_printout = pd.DataFrame(defs.stats()['mean'], 
+                      columns=['mean'], 
+                      index=teams.Team.values)
+df_hpd_defense_printout = df_hpd_defense_printout.join(df_median_printout)
+df_hpd_defense_printout = df_hpd_defense_printout.join(df_mean_printout)
+df_hpd_defense_printout = df_hpd_defense_printout[["mean", "hpd_low", "hpd_median", "hpd_high"]]
+df_hpd_defense_printout = df_hpd_defense_printout.rename(columns = {'hpd_low': '2.5%', 'hpd_high': '97.5%', "hpd_median": "median"})
+del df_median_printout
+del df_mean_printout
+
+#save hpd attack and defense table
+df_hpd_attack_printout.to_csv(os.path.join(OUTPUT_DIR, "df_hpd_attack_printout.csv"))
+df_hpd_defense_printout.to_csv(os.path.join(OUTPUT_DIR, "df_hpd_defense_printout.csv"))
 
 
 # #test plotting match sample code for proof of concept
