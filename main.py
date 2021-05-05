@@ -904,41 +904,49 @@ def simulate_seasons(n=1000):
         df_actual_season_team["CumGoalsFor"] = df_actual_season_team["GoalsFor"].cumsum(axis='index')
         df_actual_season_team["CumGoalsAgainst"] = df_actual_season_team["GoalsAgainst"].cumsum(axis='index')
         
+        label_font = 16
+        title_font = 24
         # fig, axs = plt.subplots(figsize=(10,6))
         plt.figure(fig_points.number)
         axs = plt.subplot(5,4,test_team_index)
-        axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumPts"], label="Actual", alpha = 100, linewidth=3)
-        axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumPts"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
-        axs.set_xlabel("Match")
-        axs.set_ylabel("Cumulative Points")
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_actual_season_team["CumPts"], label="Actual", alpha = 100, linewidth=3)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_test_season_team["CumPts"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
+        if (test_team_index > 5 * 4 - 4):
+            axs.set_xlabel("Match", fontsize = label_font)
+        if (np.mod(test_team_index,4)==1):
+            axs.set_ylabel("Cumulative Points", fontsize = label_font)
         if (test_team_index == 4):
             # axs.legend(fontsize=20)
-            axs.legend(fontsize=16, bbox_to_anchor=(1.1, 1.05))
-        axs.set_title("".join([str(test_team_name.values[0])]))
+            axs.legend(fontsize=16, bbox_to_anchor=(1.0, 1.0))
+        axs.set_title("".join([str(test_team_name.values[0])]), fontsize= title_font)
 
         
         plt.figure(fig_goals_for.number)
         axs = plt.subplot(5,4,test_team_index)
-        axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsFor"], label="Actual", alpha = 100, linewidth=3)
-        axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsFor"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
-        axs.set_xlabel("Match")
-        axs.set_ylabel("Cumulative Goals Scored")
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_actual_season_team["CumGoalsFor"], label="Actual", alpha = 100, linewidth=3)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_test_season_team["CumGoalsFor"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
+        if (test_team_index > 5 * 4 - 4):
+            axs.set_xlabel("Match", fontsize = label_font)
+        if (np.mod(test_team_index,4)==1):
+            axs.set_ylabel("Cumulative Goals Scored", fontsize=label_font)
         if (test_team_index == 4):
             # axs.legend(fontsize=20)
-            axs.legend(fontsize=16, bbox_to_anchor=(1.1, 1.05))
-        axs.set_title("".join([str(test_team_name.values[0])]))
+            axs.legend(fontsize=16, bbox_to_anchor=(1.0, 1.0))
+        axs.set_title("".join([str(test_team_name.values[0])]), fontsize= title_font)
 
         
         plt.figure(fig_goals_against.number)
         axs = plt.subplot(5,4,test_team_index)
-        axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsAgainst"], label="Actual", alpha = 100, linewidth=3)
-        axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsAgainst"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
-        axs.set_xlabel("Match")
-        axs.set_ylabel("Cumulative Goals Conceded")
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_actual_season_team["CumGoalsAgainst"], label="Actual", alpha = 100, linewidth=3)
+        axs.plot(np.arange(np.shape(df_actual_season_team["MatchNo"])[0])+1, df_test_season_team["CumGoalsAgainst"], label="".join([str(n), " Simulations"]), alpha = 70, linewidth=2)
+        if (test_team_index > 5 * 4 - 4):
+            axs.set_xlabel("Match", fontsize = label_font)
+        if (np.mod(test_team_index,4)==1):
+            axs.set_ylabel("Cumulative Goals Conceded", fontsize=label_font)
         if (test_team_index == 4):
             # axs.legend(fontsize=20)
-            axs.legend(fontsize=16, bbox_to_anchor=(1.1, 1.05))
-        axs.set_title("".join([str(test_team_name.values[0])]))
+            axs.legend(fontsize=16, bbox_to_anchor=(1.0, 1.0))
+        axs.set_title("".join([str(test_team_name.values[0])]), fontsize= title_font)
 
     del df_team_internal
     del df_data_internal
