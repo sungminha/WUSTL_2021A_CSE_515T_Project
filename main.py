@@ -30,7 +30,11 @@ iteration = 2000  # how many iterations?
 burn = 400  # how many to discard from the beginning of the iterations?
 thin = 2  # how often to record?
 
-num_simul=100
+num_simul=1000
+
+plot_confidence_interval_lower_cut = 0.025
+plot_confidence_interval_upper_cut = 0.975
+plot_confidence_interval_percent = (plot_confidence_interval_upper_cut - plot_confidence_interval_lower_cut) * 100
 
 VERBOSE = False  # more printouts
 USE_MU_ATT_and_MU_DEF = False  # use instead of zero for mean of att and def
@@ -612,12 +616,12 @@ plt.close()
 total_stat = mcmc.stats()
 attack_param = total_stat['atts']
 mean_attack_team = atts.stats()['mean'] + atts_shots.stats()['mean'] + atts_shots_target.stats()['mean'] + atts_corners.stats()['mean'] - atts_fouls.stats()['mean'] - atts_yc.stats()['mean'] - atts_rc.stats()['mean'] + atts_streak.stats()['mean'] + atts_form.stats()['mean']
-
+# mean_attack_team = atts.stats()['mean']
                     
 
 defence_param = total_stat['defs']
 mean_defence_team = defs.stats()['mean'] + defs_shots.stats()['mean'] + defs_shots_target.stats()['mean'] + defs_corners.stats()['mean'] - defs_fouls.stats()['mean'] - defs_yc.stats()['mean'] - defs_rc.stats()['mean'] + defs_streak.stats()['mean'] + defs_form.stats()['mean']
-
+# mean_defence_team = defs.stats()['mean']
 
 # making predictions
 # observed_season = DATA_DIR + 'premier_league_13_14_table.csv'
@@ -811,6 +815,8 @@ def create_season_table(season):
 def simulate_seasons(n=1000):
     dfs = []
     for i in range(n):
+        if (np.mod(i, 50) == 0):
+            print("".join([i, "/", n]))
         s = simulate_season()
         t = create_season_table(s)
         t['iteration'] = i
@@ -871,42 +877,135 @@ for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1):
   
 df_observed['Pts'] = points
 g = simuls.groupby('Team')
-season_hdis = pd.DataFrame({'points_lower': g.points.quantile(.05),
-                            'points_upper': g.points.quantile(.95),
-                            'goals_for_lower': g.gf.quantile(.05),
+#updated version of season_hdis
+season_hdis = pd.DataFrame({'points_lower': g.points.quantile(plot_confidence_interval_lower_cut),
+                            'points_median': g.points.median(),
+                            'points_upper': g.points.quantile(plot_confidence_interval_upper_cut),
+                            'goals_for_lower': g.gf.quantile(plot_confidence_interval_lower_cut),
                             'goals_for_median': g.gf.median(),
-                            'goals_for_upper': g.gf.quantile(.95),
-                            'goals_against_lower': g.ga.quantile(.05),
-                            'goals_against_upper': g.ga.quantile(.95),
+                            'goals_for_upper': g.gf.quantile(plot_confidence_interval_upper_cut),
+                            'goals_against_lower': g.ga.quantile(plot_confidence_interval_lower_cut),
+                            'goals_against_median': g.ga.median(),
+                            'goals_against_upper': g.ga.quantile(plot_confidence_interval_upper_cut),
                             })
+# season_hdis = pd.DataFrame({'points_lower': g.points.quantile(.05),
+#                             'points_upper': g.points.quantile(.95),
+#                             'goals_for_lower': g.gf.quantile(.05),
+#                             'goals_for_median': g.gf.median(),
+#                             'goals_for_upper': g.gf.quantile(.95),
+#                             'goals_against_lower': g.ga.quantile(.05),
+#                             'goals_against_upper': g.ga.quantile(.95),
+#                             })
 season_hdis = pd.merge(season_hdis, df_observed, left_index=True, right_on='Team')
-column_order = ['Team', 'points_lower', 'Pts', 'points_upper', 
+# column_order = ['Team', 'points_lower', 'Pts', 'points_upper', 
+                # 'goals_for_lower', 'goals_scored', 'goals_for_median', 'goals_for_upper',
+                # 'goals_against_lower', 'goals_lost', 'goals_against_upper',]
+#updated version with more columns
+column_order = ['Team', 'points_lower', 'Pts', 'points_median', 'points_upper', 
                 'goals_for_lower', 'goals_scored', 'goals_for_median', 'goals_for_upper',
-                'goals_against_lower', 'goals_lost', 'goals_against_upper',]
+                'goals_against_lower', 'goals_lost', 'goals_against_median', 'goals_against_upper',]
+
 season_hdis = season_hdis[column_order]
+# season_hdis['relative_goals_upper'] = season_hdis.goals_for_upper - season_hdis.goals_for_median
+# season_hdis['relative_goals_lower'] = season_hdis.goals_for_median - season_hdis.goals_for_lower
 season_hdis['relative_goals_upper'] = season_hdis.goals_for_upper - season_hdis.goals_for_median
 season_hdis['relative_goals_lower'] = season_hdis.goals_for_median - season_hdis.goals_for_lower
+season_hdis['relative_goals_against_upper'] = season_hdis.goals_against_upper - season_hdis.goals_against_median
+season_hdis['relative_goals_against_lower'] = season_hdis.goals_against_median - season_hdis.goals_against_lower
+season_hdis['relative_points_upper'] = season_hdis.points_upper - season_hdis.points_median
+season_hdis['relative_points_lower'] = season_hdis.points_median - season_hdis.points_lower
 # season_hdis = season_hdis.sort_index(by='goals_scored')
 season_hdis = season_hdis.sort_values(by='goals_scored')
 season_hdis = season_hdis.reset_index()
+season_hdis_copy = season_hdis.copy()
 season_hdis['x'] = season_hdis.index + .5
 season_hdis
 
-fig, axs = plt.subplots(figsize=(10,6))
-axs.scatter(season_hdis.x, season_hdis.goals_scored, c=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals For')
+#save season_hdis
+season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis.csv"))
+
+## Plot Goals for
+del season_hdis
+season_hdis = season_hdis_copy.copy()
+season_hdis = season_hdis.sort_values(by='goals_scored')
+season_hdis = season_hdis.reset_index()
+season_hdis['x'] = season_hdis.index + .5
+
+fig, axs = plt.subplots(figsize=(16,10))
+axs.scatter(season_hdis.x, season_hdis.goals_scored, color=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals Scored')
 axs.errorbar(season_hdis.x, season_hdis.goals_for_median, 
-              yerr=(season_hdis[['relative_goals_lower', 'relative_goals_upper']].values).T, 
-              fmt='s', c=sns.palettes.color_palette()[5], label='Simulations')
-axs.set_title('Actual Goals For, and 90% Interval from Simulations, by Team')
+             yerr=(season_hdis[['relative_goals_lower', 'relative_goals_upper']].values).T, 
+             fmt='s', color=sns.palettes.color_palette()[5], label="".join([str(num_simul), ' Simulations']))
+axs.set_title("".join(['Actual Goals Scored, and ', str(plot_confidence_interval_percent), "% Interval from ", str(num_simul), " Simulations, by Team"]))
 axs.set_xlabel('Team')
 axs.set_ylabel('Goals Scored')
 axs.set_xlim(0, 20)
 axs.legend()
 _= axs.set_xticks(season_hdis.index + .5)
-_= axs.set_xticklabels(season_hdis['Team'].values, rotation=45)
+_= axs.set_xticklabels(season_hdis['Team'].values, rotation=30)
+
+#save fig
+output_actual_goals_for_vs_simulation_plot = os.path.join(OUTPUT_DIR, "".join(
+    ["simulation_vs_real_goals_for_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+plt.savefig(fname=output_actual_goals_for_vs_simulation_plot)
+plt.close()
+
+
+## plot goals against
+del season_hdis
+season_hdis = season_hdis_copy.copy()
+season_hdis = season_hdis.sort_values(by='goals_lost')
+season_hdis = season_hdis.reset_index()
+season_hdis['x'] = season_hdis.index + .5
+
+fig, axs = plt.subplots(figsize=(16,10))
+axs.scatter(season_hdis.x, season_hdis.goals_lost, color=sns.palettes.color_palette()[4], zorder = 10, label='Actual Goals Conceded')
+axs.errorbar(season_hdis.x, season_hdis.goals_against_median, 
+             yerr=(season_hdis[['relative_goals_against_lower', 'relative_goals_against_upper']].values).T, 
+             fmt='s', color=sns.palettes.color_palette()[5], label="".join([str(num_simul), ' Simulations']))
+axs.set_title("".join(['Actual Goals Conceded, and ', str(plot_confidence_interval_percent), "% Interval from ", str(num_simul), " Simulations, by Team"]))
+axs.set_xlabel('Team')
+axs.set_ylabel('Goals Conceded')
+axs.set_xlim(0, 20)
+axs.legend()
+_= axs.set_xticks(season_hdis.index + .5)
+_= axs.set_xticklabels(season_hdis['Team'].values, rotation=30)
+
+#save fig
+output_actual_goals_against_vs_simulation_plot = os.path.join(OUTPUT_DIR, "".join(
+    ["simulation_vs_real_goals_against_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+plt.savefig(fname=output_actual_goals_against_vs_simulation_plot)
+plt.close()
+
+## plot points
+del season_hdis
+season_hdis = season_hdis_copy.copy()
+season_hdis = season_hdis.sort_values(by='Pts')
+season_hdis = season_hdis.reset_index()
+season_hdis['x'] = season_hdis.index + .5
+
+fig, axs = plt.subplots(figsize=(16,10))
+axs.scatter(season_hdis.x, season_hdis.Pts, color=sns.palettes.color_palette()[4], zorder = 10, label='Actual Points')
+axs.errorbar(season_hdis.x, season_hdis.points_median, 
+             yerr=(season_hdis[['relative_points_lower', 'relative_points_upper']].values).T, 
+             fmt='s', color=sns.palettes.color_palette()[5], label="".join([str(num_simul), ' Simulations']))
+axs.set_title("".join(['Actual Points, and ', str(plot_confidence_interval_percent), "% Interval from ", str(num_simul), " Simulations, by Team"]))
+axs.set_xlabel('Team')
+axs.set_ylabel('Points')
+axs.set_xlim(0, 20)
+axs.legend()
+_= axs.set_xticks(season_hdis.index + .5)
+_= axs.set_xticklabels(season_hdis['Team'].values, rotation=30)
+
+#save fig
+output_actual_goals_for_vs_simulation_plot = os.path.join(OUTPUT_DIR, "".join(
+    ["simulation_vs_real_points_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+plt.savefig(fname=output_actual_goals_for_vs_simulation_plot)
+plt.close()
+
 
 #test plotting match sample code for proof of concept
-num_simul = 1000
+num_simul = 100
 dfs = []
 for i in range(num_simul):
     if (np.mod(i, 50) == 0):
