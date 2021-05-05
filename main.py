@@ -654,16 +654,20 @@ if (VERBOSE):
   print("df_avg:")
   print(df_avg)
 
-fig, ax = plt.subplots(figsize=(15, 15))
+fig, ax = plt.subplots(figsize=(24, 18))
 ax.plot(df_avg.avg_att,  df_avg.avg_def, 'o')
 
 for label, x, y in zip(df_avg.team.values, df_avg.avg_att.values, df_avg.avg_def.values):
-    ax.annotate(label, xy=(x, y), xytext = (5,5), textcoords='offset points',fontsize=15)
-ax.set_title('Attack vs Defense average effect: 2017-18 Premier League',fontsize=18)
-ax.set_xlabel('Average attack effect',fontsize=18)
-ax.set_ylabel('Average defense effect',fontsize=18)
+    rotation = 20
+    ax.annotate(label, xy=(x, y), xytext = (-5,5), textcoords='offset points',fontsize=22, rotation=rotation)
+ax.set_title('Attack vs Defense average effect: 2017-18 Premier League',fontsize=48)
+ax.set_xlabel('Average attack effect',fontsize=34)
+ax.set_ylabel('Average defense effect',fontsize=34)
+ax.tick_params(axis='x', labelsize=24)
+ax.tick_params(axis='y', labelsize=24)
 ax.legend()
 # plt.show()
+
 
 #save figure of scatterplot of att vs def
 plt.savefig(fname=os.path.join(OUTPUT_DIR, "".join(
