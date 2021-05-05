@@ -876,6 +876,9 @@ for team_index in np.arange(start=1, stop=np.shape(team_details)[0]+1, step=1):
   points[team_index-1] = 3 * np.shape(win)[0] + 1 * np.shape(draw)[0]
   
 df_observed['Pts'] = points
+
+##############################################################################
+##run simulation
 g = simuls.groupby('Team')
 #updated version of season_hdis
 season_hdis = pd.DataFrame({'points_lower': g.points.quantile(plot_confidence_interval_lower_cut),
@@ -924,6 +927,7 @@ season_hdis
 #save season_hdis
 season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis.csv"))
 
+##############################################################################
 ## Plot Goals for
 del season_hdis
 season_hdis = season_hdis_copy.copy()
@@ -1002,6 +1006,62 @@ output_actual_goals_for_vs_simulation_plot = os.path.join(OUTPUT_DIR, "".join(
     ["simulation_vs_real_points_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
 plt.savefig(fname=output_actual_goals_for_vs_simulation_plot)
 plt.close()
+
+
+##############################################################################
+## plot histogram of each team
+for plot_team_name in np.sort(np.unique(df_team['Team'].values)):
+  print("".join(["Plotting simulation histogram for team, ", str(plot_team_name)]))
+
+  # for points
+  ax = simuls.points[simuls.Team == plot_team_name].hist(figsize=(7,5))
+  median = simuls.points[simuls.Team == plot_team_name].median()
+  ax.set_title("".join([str(plot_team_name), " 2017-18 Points, ", str(num_simul), " simulations"]))
+  ax.plot([median, median], ax.get_ylim())
+  plt.annotate('Median: %s' % median, xy=(median + 1, 0.5*(ax.get_ylim()[1]-ax.get_ylim()[0])))
+
+  #save fig
+  output_hist_simul_per_team = os.path.join(OUTPUT_DIR, "".join(
+      ["Per_Team_", str(plot_team_name), "_simulation_histogram_points_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+  plt.savefig(fname=output_hist_simul_per_team)
+  plt.close()
+
+  # for goals for
+  ax = simuls.gf[simuls.Team == plot_team_name].hist(figsize=(7,5))
+  median = simuls.gf[simuls.Team == plot_team_name].median()
+  ax.set_title("".join([str(plot_team_name), " 2017-18 Goals Scored, ", str(num_simul), " simulations"]))
+  ax.plot([median, median], ax.get_ylim())
+  plt.annotate('Median: %s' % median, xy=(median + 1, 0.5*(ax.get_ylim()[1]-ax.get_ylim()[0])))
+
+  #save fig
+  output_hist_simul_per_team = os.path.join(OUTPUT_DIR, "".join(
+      ["Per_Team_", str(plot_team_name), "_simulation_histogram_goals_for_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+  plt.savefig(fname=output_hist_simul_per_team)
+  plt.close()
+
+  # for goals against
+  ax = simuls.ga[simuls.Team == plot_team_name].hist(figsize=(7,5))
+  median = simuls.ga[simuls.Team == plot_team_name].median()
+  ax.set_title("".join([str(plot_team_name), " 2017-18 Goals Conceded, ", str(num_simul), " simulations"]))
+  ax.plot([median, median], ax.get_ylim())
+  plt.annotate('Median: %s' % median, xy=(median + 1, 0.5*(ax.get_ylim()[1]-ax.get_ylim()[0])))
+
+  #save fig
+  output_hist_simul_per_team = os.path.join(OUTPUT_DIR, "".join(
+      ["Per_Team_", str(plot_team_name), "_simulation_histogram_goals_against_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+  plt.savefig(fname=output_hist_simul_per_team)
+  plt.close()
+
+##############################################################################
+## calculate error
+del season_hdis
+season_hdis = season_hdis_copy.copy()
+season_hdis["error_Pts"] = (season_hdis["Pts"] - season_hdis["points_median"])/season_hdis["Pts"]
+season_hdis["error_goals_scored"] = (season_hdis["goals_scored"] - season_hdis["goals_for_median"])/season_hdis["goals_scored"]
+season_hdis["error_goals_lost"] = (season_hdis["goals_lost"] - season_hdis["goals_against_median"])/season_hdis["goals_lost"]
+
+#save season_hdis
+season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis_with_error.csv"))
 
 
 #test plotting match sample code for proof of concept
