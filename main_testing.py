@@ -56,10 +56,10 @@ plot_confidence_interval_percent = (plot_confidence_interval_upper_cut - plot_co
 
 if (DEBUG2):
   #for testing
-  iteration = 400000  # how many iterations?
-  burn = 80000  # how many to discard from the beginning of the iterations?
-  thin = 20  # how often to record?
-  num_simul=5000 #for simulation my MCMC
+  iteration = 40000  # how many iterations?
+  burn = 8000  # how many to discard from the beginning of the iterations?
+  thin = 2  # how often to record?
+  num_simul=500 #for simulation my MCMC
 elif (DEBUG):
   #for testing
   iteration = 200  # how many iterations?
@@ -814,6 +814,7 @@ def simulate_season():
     home_draw = home.trace()[draw] #home.trace() is [(iteration - burn)/thin,] shape
     intercept_draw = intercept.trace()[draw]
     season = df.copy() #380 x 25
+    season = season.sort_values
     # if (DEBUG):
       # print("season (df.copy()):")
       # print(np.shape(season))
@@ -1152,3 +1153,11 @@ season_hdis["error_goals_lost"] = (season_hdis["goals_lost"] - season_hdis["goal
 
 #save season_hdis
 season_hdis.to_csv(os.path.join(OUTPUT_DIR, "season_hdis_with_error.csv"))
+
+#for testing
+test_simulate_season = simulate_season()
+test_team_index = 1
+test_match_index_1 = (test_simulate_season['i_home']==test_team_index)
+test_match_index_2 = (test_simulate_season['i_away']==test_team_index)
+test_simulate_season_team_only_home = test_simulate_season[test_match_index_1]
+test_simulate_season_team_only_away = test_simulate_season[test_match_index_2]
