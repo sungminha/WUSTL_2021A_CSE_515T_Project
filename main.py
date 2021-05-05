@@ -846,9 +846,9 @@ def simulate_seasons(n=1000):
     df_data_internal = pd.read_csv(data_file, sep=",")
     df_team_internal = pd.read_csv(team_file, sep=",")
     
-    fig_goals_for = plt.figure(figsize=(30,24))
-    fig_goals_against = plt.figure(figsize=(30,24))
-    fig_points = plt.figure(figsize=(30,24))
+    fig_goals_for = plt.figure(figsize=(50,40))
+    fig_goals_against = plt.figure(figsize=(50,40))
+    fig_points = plt.figure(figsize=(50,40))
     for test_team_index in df_team_internal['i']:
         
         df_test_season = pd.DataFrame(dfs_test.sort_values(by="MatchNo"))
