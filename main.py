@@ -904,9 +904,10 @@ def simulate_seasons(n=1000):
         df_actual_season_team["CumGoalsFor"] = df_actual_season_team["GoalsFor"].cumsum(axis='index')
         df_actual_season_team["CumGoalsAgainst"] = df_actual_season_team["GoalsAgainst"].cumsum(axis='index')
         
-        label_font = 22
+        label_font = 26
         title_font = 28
-        tick_font = 16
+        tick_font = 24
+        tick_font_y = 22
         # fig, axs = plt.subplots(figsize=(10,6))
         plt.figure(fig_points.number)
         axs = plt.subplot(5,4,test_team_index)
@@ -917,6 +918,8 @@ def simulate_seasons(n=1000):
             plt.xticks(fontsize= tick_font)
         else:
             axs.set_xticklabels([])
+        # axs.yticks(fontsize=tick_font_y)
+        axs.tick_params(axis='y', which='major', labelsize=tick_font_y)
         if (np.mod(test_team_index,4)==1):
             axs.set_ylabel("Cumulative Points", fontsize = label_font)
         if (test_team_index == 4):
@@ -934,6 +937,8 @@ def simulate_seasons(n=1000):
             plt.xticks(fontsize= tick_font)
         else:
             axs.set_xticklabels([])
+        # axs.yticks(fontsize=tick_font_y)
+        axs.tick_params(axis='y', which='major', labelsize=tick_font_y)
         if (np.mod(test_team_index,4)==1):
             axs.set_ylabel("Cumulative Goals Scored", fontsize=label_font)
         if (test_team_index == 4):
@@ -951,6 +956,8 @@ def simulate_seasons(n=1000):
             plt.xticks(fontsize= tick_font)
         else:
             axs.set_xticklabels([])
+        # axs.yticks(fontsize=tick_font_y)
+        axs.tick_params(axis='y', which='major', labelsize=tick_font_y)
         if (np.mod(test_team_index,4)==1):
             axs.set_ylabel("Cumulative Goals Conceded", fontsize=label_font)
         if (test_team_index == 4):
@@ -963,7 +970,7 @@ def simulate_seasons(n=1000):
     
     plt.figure(fig_points.number)
     fig_points.tight_layout()
-    plt.suptitle("Cumulative Points over Season")
+    # plt.suptitle("Cumulative Points over Season")
 
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Points_Team_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
@@ -973,7 +980,7 @@ def simulate_seasons(n=1000):
     
     plt.figure(fig_goals_for.number)
     fig_goals_for.tight_layout()
-    plt.suptitle("Cumulative Goals Scored over Season")
+    # plt.suptitle("Cumulative Goals Scored over Season")
 
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_For_Team_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
@@ -983,7 +990,7 @@ def simulate_seasons(n=1000):
     
     plt.figure(fig_goals_against.number)
     fig_goals_against.tight_layout()
-    plt.suptitle("Cumulative Goals Conceded over Season")
+    # plt.suptitle("Cumulative Goals Conceded over Season")
 
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_Against_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
