@@ -912,7 +912,8 @@ def simulate_seasons(n=1000):
         axs.set_xlabel("Match")
         axs.set_ylabel("Cumulative Points")
         if (test_team_index == 4):
-            axs.legend()
+            # axs.legend(fontsize=20)
+            axs.legend(fontsize=16, bbox_to_anchor=(1.1, 1.05))
         axs.set_title("".join([str(test_team_name.values[0])]))
 
         
@@ -923,7 +924,8 @@ def simulate_seasons(n=1000):
         axs.set_xlabel("Match")
         axs.set_ylabel("Cumulative Goals Scored")
         if (test_team_index == 4):
-            axs.legend()
+            # axs.legend(fontsize=20)
+            axs.legend(fontsize=16, bbox_to_anchor=(1.1, 1.05))
         axs.set_title("".join([str(test_team_name.values[0])]))
 
         
@@ -934,13 +936,16 @@ def simulate_seasons(n=1000):
         axs.set_xlabel("Match")
         axs.set_ylabel("Cumulative Goals Conceded")
         if (test_team_index == 4):
-            axs.legend()
+            # axs.legend(fontsize=20)
+            axs.legend(fontsize=16, bbox_to_anchor=(1.1, 1.05))
         axs.set_title("".join([str(test_team_name.values[0])]))
 
     del df_team_internal
     del df_data_internal
     
-    plt.figure(fig_goals_for.number)
+    plt.figure(fig_points.number)
+    fig_points.tight_layout()
+
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Points_Team_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
     plt.savefig(fname=output_path)
@@ -948,6 +953,8 @@ def simulate_seasons(n=1000):
     plt.close()
     
     plt.figure(fig_goals_for.number)
+    fig_goals_for.tight_layout()
+
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_For_Team_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
     plt.savefig(fname=output_path)
@@ -955,6 +962,8 @@ def simulate_seasons(n=1000):
     plt.close()
     
     plt.figure(fig_goals_against.number)
+    fig_goals_against.tight_layout()
+
     output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_Against_", str(burn), "_", str(thin), ".png"]))
     print("".join(["Saving figure to ", str(output_path)]))
     plt.savefig(fname=output_path)
