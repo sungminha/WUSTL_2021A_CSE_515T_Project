@@ -830,7 +830,7 @@ def simulate_seasons(n=1000):
 
     ##########################################################################
     #plot per team prediction vs real
-    dfs_test = simulate_season() #for bogus to fill up
+    dfs_test = s.copy() #for bogus to fill up
     fthg_array = np.zeros(shape = (np.shape(dfs_test["home_goals"])[0], n))
     ftag_array = np.zeros(shape = (np.shape(dfs_test["away_goals"])[0], n))
     dfs_test["home_goals"] = 0
