@@ -841,7 +841,8 @@ def simulate_seasons(n=1000):
     dfs_test["home_goals"] = np.median(fthg_array, axis = 1)
     dfs_test["away_goals"] = np.median(ftag_array, axis = 1)
     
-    for test_team_index in df_team['i']:
+    df_team_internal = pd.read_csv(team_file, sep=",")
+    for test_team_index in df_team_internal['i']:
         
         df_test_season = pd.DataFrame(dfs_test.sort_values(by="MatchNo"))
         df_test_season["home_draw"] = df_test_season["home_goals"] == df_test_season["away_goals"]
@@ -851,7 +852,7 @@ def simulate_seasons(n=1000):
         df_test_season["away_win"] = df_test_season["away_goals"] > df_test_season["home_goals"]
         df_test_season["away_loss"] = df_test_season["away_goals"] < df_test_season["home_goals"]
         
-        test_team_name = df_team[df_team['i'] == test_team_index]["Team"]
+        test_team_name = df_team_internal[df_team_internal['i'] == test_team_index]["Team"]
         test_season_index_match_home =df_test_season['HomeTeam'] == test_team_index
         test_season_index_match_away =df_test_season['AwayTeam'] == test_team_index
         df_test_season_home = df_test_season[test_season_index_match_home]
@@ -934,7 +935,7 @@ def simulate_seasons(n=1000):
         plt.savefig(fname=output_path)
         # plt.show()
         plt.close()
-
+    del df_team_internal
     return pd.concat(dfs, ignore_index=True)
 
 
