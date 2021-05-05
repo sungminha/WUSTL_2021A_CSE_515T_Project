@@ -28,6 +28,7 @@ team_file = os.path.join(DATA_DIR, 'team_index.csv')
 iteration = 2000  # how many iterations?
 burn = 400  # how many to discard from the beginning of the iterations?
 thin = 2  # how often to record?
+num_simul=1000
 
 VERBOSE = False  # more printouts
 USE_MU_ATT_and_MU_DEF = False  # use instead of zero for mean of att and def
@@ -805,7 +806,7 @@ def simulate_seasons(n=1000):
         dfs.append(t)
     return pd.concat(dfs, ignore_index=True)
 
-num_simul=1000
+
 simuls = simulate_seasons(num_simul)
 
 # team_name_test='Man United'
@@ -891,3 +892,100 @@ axs.set_xlim(0, 20)
 axs.legend()
 _= axs.set_xticks(season_hdis.index + .5)
 _= axs.set_xticklabels(season_hdis['Team'].values, rotation=45)
+
+#test plotting match sample code for proof of concept
+test_season = simulate_season()
+
+for test_team_index in df_team['i']:
+    
+    df_test_season = pd.DataFrame(test_season.sort_values(by="MatchNo"))
+    df_test_season["home_draw"] = df_test_season["FTHG"] == df_test_season["FTAG"]
+    df_test_season["home_win"] = df_test_season["FTHG"] > df_test_season["FTAG"]
+    df_test_season["home_loss"] = df_test_season["FTHG"] < df_test_season["FTAG"]
+    df_test_season["away_draw"] = df_test_season["FTAG"] == df_test_season["FTHG"]
+    df_test_season["away_win"] = df_test_season["FTAG"] > df_test_season["FTHG"]
+    df_test_season["away_loss"] = df_test_season["FTAG"] < df_test_season["FTHG"]
+    
+    test_team_name = df_team[df_team['i'] == test_team_index]["Team"]
+    test_season_index_match_home =df_test_season['HomeTeam'] == test_team_index
+    test_season_index_match_away =df_test_season['AwayTeam'] == test_team_index
+    df_test_season_home = df_test_season[test_season_index_match_home]
+    df_test_season_home_copy = df_test_season_home.copy()
+    df_test_season_home["Pts"] = 1 * df_test_season_home_copy["home_draw"] + 3 * df_test_season_home_copy["home_win"]
+    df_test_season_home["GoalsFor"] = 1 * df_test_season_home_copy["FTHG"]
+    df_test_season_home["GoalsAgainst"] = 1 * df_test_season_home_copy["FTAG"]
+    del df_test_season_home_copy
+    df_test_season_away = df_test_season[test_season_index_match_away]
+    df_test_season_away_copy = df_test_season_away.copy()
+    df_test_season_away["Pts"] = 1 * df_test_season_away_copy["away_draw"] + 3 * df_test_season_away_copy["away_win"]
+    df_test_season_away["GoalsFor"] = 1 * df_test_season_away_copy["FTAG"]
+    df_test_season_away["GoalsAgainst"] = 1 * df_test_season_away_copy["FTHG"]
+    del df_test_season_away_copy
+    df_test_season_team = pd.concat([df_test_season_home, df_test_season_away], axis=0).sort_values(by="MatchNo")
+    df_test_season_team["CumPts"] = df_test_season_team["Pts"].cumsum(axis='index')
+    df_test_season_team["CumGoalsFor"] = df_test_season_team["GoalsFor"].cumsum(axis='index')
+    df_test_season_team["CumGoalsAgainst"] = df_test_season_team["GoalsAgainst"].cumsum(axis='index')
+    
+    df_data["home_draw"] = df_data["FTHG"] == df_data["FTAG"]
+    df_data["home_win"] = df_data["FTHG"] > df_data["FTAG"]
+    df_data["home_loss"] = df_data["FTHG"] < df_data["FTAG"]
+    df_data["away_draw"] = df_data["FTAG"] == df_data["FTHG"]
+    df_data["away_win"] = df_data["FTAG"] > df_data["FTHG"]
+    df_data["away_loss"] = df_data["FTAG"] < df_data["FTHG"]
+    actual_season_index_match_home = df_data['HomeTeam'] == test_team_index
+    actual_season_index_match_away = df_data['AwayTeam'] == test_team_index
+    df_actual_season_home = df_data[actual_season_index_match_home]
+    df_actual_season_home_copy = df_actual_season_home.copy()
+    df_actual_season_home["Pts"] = 1 * df_actual_season_home_copy["home_draw"] + 3 * df_actual_season_home_copy["home_win"]
+    df_actual_season_home["GoalsFor"] = 1 * df_actual_season_home_copy["FTHG"]
+    df_actual_season_home["GoalsAgainst"] = 1 * df_actual_season_home_copy["FTAG"]
+    del df_actual_season_home_copy
+    df_actual_season_away = df_data[actual_season_index_match_away]
+    df_actual_season_away_copy = df_actual_season_away.copy()
+    df_actual_season_away["Pts"] = 1 * df_actual_season_away_copy["away_draw"] + 3 * df_actual_season_away_copy["away_win"]
+    df_actual_season_away["GoalsFor"] = 1 * df_actual_season_away_copy["FTAG"]
+    df_actual_season_away["GoalsAgainst"] = 1 * df_actual_season_away_copy["FTHG"]
+    del df_actual_season_away_copy
+    df_actual_season_team = pd.concat([df_actual_season_home, df_actual_season_away], axis=0).sort_values(by="MatchNo")
+    df_actual_season_team["CumPts"] = df_actual_season_team["Pts"].cumsum(axis='index')
+    df_actual_season_team["CumGoalsFor"] = df_actual_season_team["GoalsFor"].cumsum(axis='index')
+    df_actual_season_team["CumGoalsAgainst"] = df_actual_season_team["GoalsAgainst"].cumsum(axis='index')
+    
+    fig, axs = plt.subplots(figsize=(10,6))
+    axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumPts"], label="Actual", alpha = 100, linewidth=3)
+    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumPts"], label="Simulation", alpha = 70, linewidth=2)
+    axs.set_xlabel("Match")
+    axs.set_ylabel("Cumulative Points")
+    axs.legend()
+    axs.set_title("".join([str(test_team_name.values[0])]))
+    output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Points_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
+    print("".join(["Saving figure to ", str(output_path)]))
+    plt.savefig(fname=output_path)
+    # plt.show()
+    plt.close()
+    
+    fig, axs = plt.subplots(figsize=(10,6))
+    axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsFor"], label="Actual", alpha = 100, linewidth=3)
+    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsFor"], label="Simulation", alpha = 70, linewidth=2)
+    axs.set_xlabel("Match")
+    axs.set_ylabel("Cumulative Goals Scored")
+    axs.legend()
+    axs.set_title("".join([str(test_team_name.values[0])]))
+    output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_For_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
+    print("".join(["Saving figure to ", str(output_path)]))
+    plt.savefig(fname=output_path)
+    # plt.show()
+    plt.close()
+    
+    fig, axs = plt.subplots(figsize=(10,6))
+    axs.plot(df_actual_season_team["MatchNo"], df_actual_season_team["CumGoalsAgainst"], label="Actual", alpha = 100, linewidth=3)
+    axs.plot(df_test_season_team["MatchNo"], df_test_season_team["CumGoalsAgainst"], label="Simulation", alpha = 70, linewidth=2)
+    axs.set_xlabel("Match")
+    axs.set_ylabel("Cumulative Goals Conceded")
+    axs.legend()
+    axs.set_title("".join([str(test_team_name.values[0])]))
+    output_path = os.path.join(OUTPUT_DIR, "".join(["Actual_vs_Prediction_Per_Match_Goals_Against_Team_", str(test_team_index), "_", str(burn), "_", str(thin), ".png"]))
+    print("".join(["Saving figure to ", str(output_path)]))
+    plt.savefig(fname=output_path)
+    # plt.show()
+    plt.close()
