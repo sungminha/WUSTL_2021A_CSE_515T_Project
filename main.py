@@ -841,6 +841,7 @@ def simulate_seasons(n=1000):
     dfs_test["home_goals"] = np.median(fthg_array, axis = 1)
     dfs_test["away_goals"] = np.median(ftag_array, axis = 1)
     
+    df_data_internal = pd.read_csv(data_file, sep=",")
     df_team_internal = pd.read_csv(team_file, sep=",")
     for test_team_index in df_team_internal['i']:
         
@@ -872,21 +873,21 @@ def simulate_seasons(n=1000):
         df_test_season_team["CumGoalsFor"] = df_test_season_team["GoalsFor"].cumsum(axis='index')
         df_test_season_team["CumGoalsAgainst"] = df_test_season_team["GoalsAgainst"].cumsum(axis='index')
         
-        df_data["home_draw"] = df_data["FTHG"] == df_data["FTAG"]
-        df_data["home_win"] = df_data["FTHG"] > df_data["FTAG"]
-        df_data["home_loss"] = df_data["FTHG"] < df_data["FTAG"]
-        df_data["away_draw"] = df_data["FTAG"] == df_data["FTHG"]
-        df_data["away_win"] = df_data["FTAG"] > df_data["FTHG"]
-        df_data["away_loss"] = df_data["FTAG"] < df_data["FTHG"]
-        actual_season_index_match_home = df_data['HomeTeam'] == test_team_index
-        actual_season_index_match_away = df_data['AwayTeam'] == test_team_index
-        df_actual_season_home = df_data[actual_season_index_match_home]
+        df_data_internal["home_draw"] = df_data_internal["FTHG"] == df_data_internal["FTAG"]
+        df_data_internal["home_win"] = df_data_internal["FTHG"] > df_data_internal["FTAG"]
+        df_data_internal["home_loss"] = df_data_internal["FTHG"] < df_data_internal["FTAG"]
+        df_data_internal["away_draw"] = df_data_internal["FTAG"] == df_data_internal["FTHG"]
+        df_data_internal["away_win"] = df_data_internal["FTAG"] > df_data_internal["FTHG"]
+        df_data_internal["away_loss"] = df_data_internal["FTAG"] < df_data_internal["FTHG"]
+        actual_season_index_match_home = df_data_internal['HomeTeam'] == test_team_index
+        actual_season_index_match_away = df_data_internal['AwayTeam'] == test_team_index
+        df_actual_season_home = df_data_internal[actual_season_index_match_home]
         df_actual_season_home_copy = df_actual_season_home.copy()
         df_actual_season_home["Pts"] = 1 * df_actual_season_home_copy["home_draw"] + 3 * df_actual_season_home_copy["home_win"]
         df_actual_season_home["GoalsFor"] = 1 * df_actual_season_home_copy["FTHG"]
         df_actual_season_home["GoalsAgainst"] = 1 * df_actual_season_home_copy["FTAG"]
         del df_actual_season_home_copy
-        df_actual_season_away = df_data[actual_season_index_match_away]
+        df_actual_season_away = df_data_internal[actual_season_index_match_away]
         df_actual_season_away_copy = df_actual_season_away.copy()
         df_actual_season_away["Pts"] = 1 * df_actual_season_away_copy["away_draw"] + 3 * df_actual_season_away_copy["away_win"]
         df_actual_season_away["GoalsFor"] = 1 * df_actual_season_away_copy["FTAG"]
@@ -936,6 +937,7 @@ def simulate_seasons(n=1000):
         # plt.show()
         plt.close()
     del df_team_internal
+    del df_data_internal
     return pd.concat(dfs, ignore_index=True)
 
 
