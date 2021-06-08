@@ -1066,9 +1066,9 @@ if (DEBUG):
 _= axs.set_xticklabels(season_hdis['Team'].values, rotation=30)
 
 #save fig
-output_actual_points_vs_simulation_plot = os.path.join(OUTPUT_DIR, "".join(
-    ["simulation_vs_real_points_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
-plt.savefig(fname=output_actual_points_vs_simulation_plot)
+output_actual_goals_for_vs_simulation_plot = os.path.join(OUTPUT_DIR, "".join(
+    ["simulation_vs_real_goals_for_", str(iteration), "_", str(burn), "_", str(thin), ".png"]))
+plt.savefig(fname=output_actual_goals_for_vs_simulation_plot)
 plt.close()
 
 ## plot goals against
